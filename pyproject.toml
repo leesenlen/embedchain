@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "embedchain"
-version = "0.1.36"
+version = "0.1.38"
 description = "Data platform for LLMs - Load, index, retrieve and sync any unstructured data"
 authors = [
     "Taranjeet Singh <taranjeet@embedchain.ai>",
@@ -99,10 +99,10 @@ openai = ">=1.1.1"
 chromadb = "^0.4.17"
 posthog = "^3.0.2"
 rich = "^13.7.0"
+beautifulsoup4 = "^4.12.2"
+pypdf = "^3.11.0"
 tiktoken = { version = "^0.4.0", optional = true }
 youtube-transcript-api = { version = "^0.6.1", optional = true }
-beautifulsoup4 = { version = "^4.12.2", optional = true }
-pypdf = { version = "^3.11.0", optional = true }
 pytube = { version = "^15.0.0", optional = true }
 duckduckgo-search = { version = "^3.8.5", optional = true }
 llama-hub = { version = "^0.0.43", optional = true }
@@ -145,6 +145,7 @@ feedparser = { version = "^6.0.10", optional = true }
 newspaper3k = { version = "^0.2.8", optional = true }
 listparser = { version = "^0.19", optional = true }
 google-generativeai = { version = "^0.3.0", optional = true }
+modal = { version = "^0.56.4329", optional = true }
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"
@@ -179,10 +180,8 @@ cohere = ["cohere"]
 milvus = ["pymilvus"]
 dataloaders=[
     "youtube-transcript-api",
-    "beautifulsoup4",
     "docx2txt",
     "duckduckgo-search",
-    "pypdf",
     "pytube",
     "sentence-transformers",
     "unstructured",
@@ -212,6 +211,7 @@ rss_feed = [
     "newspaper3k"
 ]
 google = ["google-generativeai"]
+modal = ["modal"]
 
 [tool.poetry.group.docs.dependencies]
 

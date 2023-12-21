@@ -20,6 +20,7 @@ def cli():
 
 anonymous_telemetry = AnonymousTelemetry()
 
+
 def get_pkg_path_from_name(template: str):
     try:
         # Determine the installation location of the embedchain package
@@ -34,7 +35,7 @@ def get_pkg_path_from_name(template: str):
     if not os.path.exists(src_path):
         console.print(f"❌ [bold red]Template '{template}' not found.[/bold red]")
         return
-    
+
     return src_path
 
 
@@ -42,6 +43,7 @@ def setup_fly_io_app(extra_args):
     fly_launch_command = ["fly", "launch", "--region", "sjc", "--no-deploy"] + list(extra_args)
     try:
         console.print(f"🚀 [bold cyan]Running: {' '.join(fly_launch_command)}[/bold cyan]")
+        shutil.move(".env.example", ".env")
         subprocess.run(fly_launch_command, check=True)
         console.print("✅ [bold green]'fly launch' executed successfully.[/bold green]")
     except subprocess.CalledProcessError as e:
@@ -59,11 +61,45 @@ def setup_modal_com_app(extra_args):
             """✅ [bold green]Modal setup already done. You can now install the dependencies by doing \n
             `pip install -r requirements.txt`[/bold green]"""
         )
-        return
-    modal_setup_cmd = ["modal", "setup"] + list(extra_args)
-    console.print(f"🚀 [bold cyan]Running: {' '.join(modal_setup_cmd)}[/bold cyan]")
-    subprocess.run(modal_setup_cmd, check=True)
+    else:
+        modal_setup_cmd = ["modal", "setup"] + list(extra_args)
+        console.print(f"🚀 [bold cyan]Running: {' '.join(modal_setup_cmd)}[/bold cyan]")
+        subprocess.run(modal_setup_cmd, check=True)
     shutil.move(".env.example", ".env")
+    console.print(
+        """Great! Now you can install the dependencies by doing: \n
+                  `pip install -r requirements.txt`\n
+                  \n
+                  To run your app locally:\n
+                  `ec dev`
+                  """
+    )
+
+
+def setup_render_com_app():
+    render_setup_file = os.path.join(os.path.expanduser("~"), ".render/config.yaml")
+    if os.path.exists(render_setup_file):
+        console.print(
+            """✅ [bold green]Render setup already done. You can now install the dependencies by doing \n
+            `pip install -r requirements.txt`[/bold green]"""
+        )
+    else:
+        render_setup_cmd = ["render", "config", "init"]
+        console.print(f"🚀 [bold cyan]Running: {' '.join(render_setup_cmd)}[/bold cyan]")
+        subprocess.run(render_setup_cmd, check=True)
+    shutil.move(".env.example", ".env")
+    console.print(
+        """Great! Now you can install the dependencies by doing: \n
+                  `pip install -r requirements.txt`\n
+                  \n
+                  To run your app locally:\n
+                  `ec dev`
+                  """
+    )
+
+
+def setup_streamlit_io_app():
+    # nothing needs to be done here
     console.print("Great! Now you can install the dependencies by doing `pip install -r requirements.txt`")
 
 
@@ -71,20 +107,19 @@ def setup_modal_com_app(extra_args):
 @click.option("--template", default="fly.io", help="The template to use.")
 @click.argument("extra_args", nargs=-1, type=click.UNPROCESSED)
 def create(template, extra_args):
-    anonymous_telemetry.capture(
-        event_name="ec_create", properties={"template_used": template}
-    )
+    anonymous_telemetry.capture(event_name="ec_create", properties={"template_used": template})
     src_path = get_pkg_path_from_name(template)
     shutil.copytree(src_path, os.getcwd(), dirs_exist_ok=True)
-    env_sample_path = os.path.join(src_path, ".env.example")
-    if os.path.exists(env_sample_path):
-        shutil.copy(env_sample_path, os.path.join(os.getcwd(), ".env"))
     console.print(f"✅ [bold green]Successfully created app from template '{template}'.[/bold green]")
 
     if template == "fly.io":
         setup_fly_io_app(extra_args)
     elif template == "modal.com":
         setup_modal_com_app(extra_args)
+    elif template == "render.com":
+        setup_render_com_app()
+    elif template == "streamlit.io":
+        setup_streamlit_io_app()
     else:
         raise ValueError(f"Unknown template '{template}'.")
 
@@ -124,6 +159,34 @@ def run_dev_modal_com():
         console.print("\n🛑 [bold yellow]FastAPI server stopped[/bold yellow]")
 
 
+def run_dev_streamlit_io():
+    streamlit_run_cmd = ["streamlit", "run", "app.py"]
+    try:
+        console.print(f"🚀 [bold cyan]Running Streamlit app with command: {' '.join(streamlit_run_cmd)}[/bold cyan]")
+        subprocess.run(streamlit_run_cmd, check=True)
+    except subprocess.CalledProcessError as e:
+        console.print(f"❌ [bold red]An error occurred: {e}[/bold red]")
+    except KeyboardInterrupt:
+        console.print("\n🛑 [bold yellow]Streamlit server stopped[/bold yellow]")
+
+
+def run_dev_render_com(debug, host, port):
+    uvicorn_command = ["uvicorn", "app:app"]
+
+    if debug:
+        uvicorn_command.append("--reload")
+
+    uvicorn_command.extend(["--host", host, "--port", str(port)])
+
+    try:
+        console.print(f"🚀 [bold cyan]Running FastAPI app with command: {' '.join(uvicorn_command)}[/bold cyan]")
+        subprocess.run(uvicorn_command, check=True)
+    except subprocess.CalledProcessError as e:
+        console.print(f"❌ [bold red]An error occurred: {e}[/bold red]")
+    except KeyboardInterrupt:
+        console.print("\n🛑 [bold yellow]FastAPI server stopped[/bold yellow]")
+
+
 @cli.command()
 @click.option("--debug", is_flag=True, help="Enable or disable debug mode.")
 @click.option("--host", default="127.0.0.1", help="The host address to run the FastAPI app on.")
@@ -134,13 +197,15 @@ def dev(debug, host, port):
         embedchain_config = json.load(file)
         template = embedchain_config["provider"]
 
-    anonymous_telemetry.capture(
-        event_name="ec_dev", properties={"template_used": template}
-    )
+    anonymous_telemetry.capture(event_name="ec_dev", properties={"template_used": template})
     if template == "fly.io":
         run_dev_fly_io(debug, host, port)
     elif template == "modal.com":
         run_dev_modal_com()
+    elif template == "render.com":
+        run_dev_render_com(debug, host, port)
+    elif template == "streamlit.io":
+        run_dev_streamlit_io()
     else:
         raise ValueError(f"Unknown template '{template}'.")
 
@@ -215,6 +280,42 @@ def deploy_modal():
         )
 
 
+def deploy_streamlit():
+    streamlit_deploy_cmd = ["streamlit", "run", "app.py"]
+    try:
+        console.print(f"🚀 [bold cyan]Running: {' '.join(streamlit_deploy_cmd)}[/bold cyan]")
+        console.print(
+            """\n\n✅ [bold yellow]To deploy a streamlit app, you can directly it from the UI.\n
+        Click on the 'Deploy' button on the top right corner of the app.\n
+        For more information, please refer to https://docs.embedchain.ai/deployment/streamlit_io
+        [/bold yellow]
+                      \n\n"""
+        )
+        subprocess.run(streamlit_deploy_cmd, check=True)
+    except subprocess.CalledProcessError as e:
+        console.print(f"❌ [bold red]An error occurred: {e}[/bold red]")
+    except FileNotFoundError:
+        console.print(
+            """❌ [bold red]'streamlit' command not found.\n
+            Please ensure Streamlit CLI is installed and in your PATH.[/bold red]"""
+        )
+
+
+def deploy_render():
+    render_deploy_cmd = ["render", "blueprint", "launch"]
+
+    try:
+        console.print(f"🚀 [bold cyan]Running: {' '.join(render_deploy_cmd)}[/bold cyan]")
+        subprocess.run(render_deploy_cmd, check=True)
+        console.print("✅ [bold green]'render blueprint launch' executed successfully.[/bold green]")
+    except subprocess.CalledProcessError as e:
+        console.print(f"❌ [bold red]An error occurred: {e}[/bold red]")
+    except FileNotFoundError:
+        console.print(
+            "❌ [bold red]'render' command not found. Please ensure Render CLI is installed and in your PATH.[/bold red]"
+        )
+
+
 @cli.command()
 def deploy():
     # Check for platform-specific files
@@ -223,12 +324,14 @@ def deploy():
         embedchain_config = json.load(file)
         template = embedchain_config["provider"]
 
-    anonymous_telemetry.capture(
-        event_name="ec_deploy", properties={"template_used": template}
-    )
+    anonymous_telemetry.capture(event_name="ec_deploy", properties={"template_used": template})
     if template == "fly.io":
         deploy_fly()
     elif template == "modal.com":
         deploy_modal()
+    elif template == "render.com":
+        deploy_render()
+    elif template == "streamlit.io":
+        deploy_streamlit()
     else:
         console.print("❌ [bold red]No recognized deployment platform found.[/bold red]")
