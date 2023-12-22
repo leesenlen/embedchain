@@ -30,7 +30,7 @@ class MySQLLoader(BaseLoader):
 
         try:
             self.connection = sqlconnector.connection.MySQLConnection(**config)
-            self.cursor = self.connection.cursor()
+            self.cursor = self.connection.cursor(dictionary=True)
         except (sqlconnector.Error, IOError) as err:
             logging.info(f"Connection failed: {err}")
             raise ValueError(
