@@ -146,6 +146,7 @@ newspaper3k = { version = "^0.2.8", optional = true }
 listparser = { version = "^0.19", optional = true }
 google-generativeai = { version = "^0.3.0", optional = true }
 modal = { version = "^0.56.4329", optional = true }
+ipykernel = "^6.27.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"
