@@ -504,7 +504,6 @@ class EmbedChain(JSONSerializable):
             citations=citations,
             **kwargs,
         )
-
         return contexts
 
     def query(
