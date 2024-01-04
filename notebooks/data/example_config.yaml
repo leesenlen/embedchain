@@ -1,0 +1,46 @@
+
+app:
+  config:
+    id: "default-app"
+
+llm:
+  provider: azure_openai
+  config:
+    model: gpt-35-turbo-0613
+    deployment_name: gpt-35-turbo-0613
+    temperature: 0.5
+    max_tokens: 1000
+    top_p: 1
+    stream: false
+    # number_documents: 1
+    # template: |
+    #   Use the following pieces of context to answer the query at the end.
+    #   If you don't know the answer, just say that you don't know, don't try to make up an answer.
+
+    #   $context
+
+    #   Query: $query
+
+    #   Helpful Answer:
+
+embedder:
+  provider: azure_openai
+  config:
+    model: text-embedding-ada-002
+    deployment_name: text-embedding-ada-002
+
+vectordb:
+  provider: elasticsearch
+  config:
+    collection_name: 'sailvan_vector_db'
+    es_url: http://10.199.1.77:9200
+    basic_auth:
+      - elastic
+      - SOLxtbk=mNnpFTaj4SOV
+    verify_certs: false
+
+chunker:
+  chunk_size: 2000
+  chunk_overlap: 20
+  length_function: 'len'
+  min_chunk_size: 20
