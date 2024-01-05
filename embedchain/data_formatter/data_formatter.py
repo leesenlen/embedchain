@@ -63,7 +63,7 @@ class DataFormatter(JSONSerializable):
             DataType.DOCS_SITE: "embedchain.loaders.docs_site_loader.DocsSiteLoader",
             DataType.CSV: "embedchain.loaders.csv.CsvLoader",
             DataType.MDX: "embedchain.loaders.mdx.MdxLoader",
-            DataType.IMAGES: "embedchain.loaders.images.ImagesLoader",
+            DataType.IMAGE: "embedchain.loaders.image.ImageLoader",
             DataType.UNSTRUCTURED: "embedchain.loaders.unstructured_file.UnstructuredLoader",
             DataType.JSON: "embedchain.loaders.json.JSONLoader",
             DataType.OPENAPI: "embedchain.loaders.openapi.OpenAPILoader",
@@ -74,8 +74,11 @@ class DataFormatter(JSONSerializable):
             DataType.DISCORD: "embedchain.loaders.discord.DiscordLoader",
             DataType.RSSFEED: "embedchain.loaders.rss_feed.RSSFeedLoader",
             DataType.BEEHIIV: "embedchain.loaders.beehiiv.BeehiivLoader",
+            DataType.GOOGLE_DRIVE: "embedchain.loaders.google_drive.GoogleDriveLoader",
             DataType.DIRECTORY: "embedchain.loaders.directory_loader.DirectoryLoader",
             DataType.SLACK: "embedchain.loaders.slack.SlackLoader",
+            DataType.DROPBOX: "embedchain.loaders.dropbox.DropboxLoader",
+            DataType.TEXT_FILE: "embedchain.loaders.text_file.TextFileLoader",
         }
 
         if data_type == DataType.CUSTOM or loader is not None:
@@ -106,7 +109,7 @@ class DataFormatter(JSONSerializable):
             DataType.DOCS_SITE: "embedchain.chunkers.docs_site.DocsSiteChunker",
             DataType.CSV: "embedchain.chunkers.table.TableChunker",
             DataType.MDX: "embedchain.chunkers.mdx.MdxChunker",
-            DataType.IMAGES: "embedchain.chunkers.images.ImagesChunker",
+            DataType.IMAGE: "embedchain.chunkers.image.ImageChunker",
             DataType.UNSTRUCTURED: "embedchain.chunkers.unstructured_file.UnstructuredFileChunker",
             DataType.JSON: "embedchain.chunkers.json.JSONChunker",
             DataType.OPENAPI: "embedchain.chunkers.openapi.OpenAPIChunker",
@@ -118,8 +121,11 @@ class DataFormatter(JSONSerializable):
             DataType.CUSTOM: "embedchain.chunkers.common_chunker.CommonChunker",
             DataType.RSSFEED: "embedchain.chunkers.rss_feed.RSSFeedChunker",
             DataType.BEEHIIV: "embedchain.chunkers.beehiiv.BeehiivChunker",
+            DataType.GOOGLE_DRIVE: "embedchain.chunkers.google_drive.GoogleDriveChunker",
             DataType.DIRECTORY: "embedchain.chunkers.common_chunker.CommonChunker",
             DataType.SLACK: "embedchain.chunkers.common_chunker.CommonChunker",
+            DataType.DROPBOX: "embedchain.chunkers.common_chunker.CommonChunker",
+            DataType.TEXT_FILE: "embedchain.chunkers.common_chunker.CommonChunker",
         }
 
         if chunker is not None:

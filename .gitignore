@@ -176,3 +176,6 @@ notebooks/*.yaml
 .ipynb_checkpoints/
 
 !configs/*.yaml
+
+# cache db
+*.db

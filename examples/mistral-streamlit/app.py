@@ -2,7 +2,13 @@ import os
 
 import streamlit as st
 
-from embedchain import Pipeline as App
+from embedchain import App
+
+
+@st.cache_resource
+def ec_app():
+    return App.from_config(config_path="config.yaml")
+
 
 with st.sidebar:
     huggingface_access_token = st.text_input("Hugging face Token", key="chatbot_api_key", type="password")
@@ -34,7 +40,7 @@ if prompt := st.chat_input("Ask me anything!"):
         st.stop()
 
     os.environ["HUGGINGFACE_ACCESS_TOKEN"] = st.session_state.chatbot_api_key
-    app = App.from_config(config_path="config.yaml")
+    app = ec_app()
 
     if prompt.startswith("/add"):
         with st.chat_message("user"):

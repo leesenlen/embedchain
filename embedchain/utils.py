@@ -183,6 +183,11 @@ def detect_datatype(source: Any) -> DataType:
         # currently the following two fields are required in openapi spec yaml config
         return "openapi" in yaml_content and "info" in yaml_content
 
+    def is_google_drive_folder(url):
+        # checks if url is a Google Drive folder url against a regex
+        regex = r"^drive\.google\.com\/drive\/(?:u\/\d+\/)folders\/([a-zA-Z0-9_-]+)$"
+        return re.match(regex, url)
+
     try:
         if not isinstance(source, str):
             raise ValueError("Source is not a string and thus cannot be a URL.")
@@ -196,8 +201,7 @@ def detect_datatype(source: Any) -> DataType:
     formatted_source = format_source(str(source), 30)
 
     if url:
-        from langchain.document_loaders.youtube import \
-            ALLOWED_NETLOCK as YOUTUBE_ALLOWED_NETLOCS
+        from langchain.document_loaders.youtube import ALLOWED_NETLOCK as YOUTUBE_ALLOWED_NETLOCS
 
         if url.netloc in YOUTUBE_ALLOWED_NETLOCS:
             logging.debug(f"Source of `{formatted_source}` detected as `youtube_video`.")
@@ -266,6 +270,10 @@ def detect_datatype(source: Any) -> DataType:
             logging.debug(f"Source of `{formatted_source}` detected as `github`.")
             return DataType.GITHUB
 
+        if is_google_drive_folder(url.netloc + url.path):
+            logging.debug(f"Source of `{formatted_source}` detected as `google drive folder`.")
+            return DataType.GOOGLE_DRIVE_FOLDER
+
         # If none of the above conditions are met, it's a general web page
         logging.debug(f"Source of `{formatted_source}` detected as `web_page`.")
         return DataType.WEB_PAGE
@@ -305,7 +313,7 @@ def detect_datatype(source: Any) -> DataType:
 
         if source.endswith(".txt"):
             logging.debug(f"Source of `{formatted_source}` detected as `text`.")
-            return DataType.TEXT
+            return DataType.TEXT_FILE
 
         if source.endswith(".pdf"):
             logging.debug(f"Source of `{formatted_source}` detected as `pdf_file`.")
@@ -330,6 +338,10 @@ def detect_datatype(source: Any) -> DataType:
         if source.endswith(".json"):
             logging.debug(f"Source of `{formatted_source}` detected as `json`.")
             return DataType.JSON
+
+        if os.path.exists(source) and is_readable(open(source).read()):
+            logging.debug(f"Source of `{formatted_source}` detected as `text_file`.")
+            return DataType.TEXT_FILE
 
         # If the source is a valid file, that's not detectable as a type, an error is raised.
         # It does not fallback to text.
@@ -358,10 +370,6 @@ def is_valid_json_string(source: str):
         _ = json.loads(source)
         return True
     except json.JSONDecodeError:
-        logging.error(
-            "Insert valid string format of JSON. \
-            Check the docs to see the supported formats - `https://docs.embedchain.ai/data-sources/json`"
-        )
         return False
 
 
@@ -384,6 +392,7 @@ def validate_config(config_data):
                     "anthropic",
                     "huggingface",
                     "cohere",
+                    "together",
                     "gpt4all",
                     "ollama",
                     "jina",
@@ -399,10 +408,12 @@ def validate_config(config_data):
                     Optional("top_p"): Or(float, int),
                     Optional("stream"): bool,
                     Optional("template"): str,
+                    Optional("prompt"): str,
                     Optional("system_prompt"): str,
                     Optional("deployment_name"): str,
                     Optional("where"): dict,
                     Optional("query_type"): str,
+                    Optional("api_key"): str,
                 },
             },
             Optional("vectordb"): {
@@ -416,6 +427,9 @@ def validate_config(config_data):
                 Optional("config"): {
                     Optional("model"): Optional(str),
                     Optional("deployment_name"): Optional(str),
+                    Optional("api_key"): str,
+                    Optional("title"): str,
+                    Optional("task_type"): str,
                 },
             },
             Optional("embedding_model"): {
@@ -423,6 +437,9 @@ def validate_config(config_data):
                 Optional("config"): {
                     Optional("model"): str,
                     Optional("deployment_name"): str,
+                    Optional("api_key"): str,
+                    Optional("title"): str,
+                    Optional("task_type"): str,
                 },
             },
             Optional("chunker"): {
@@ -430,6 +447,17 @@ def validate_config(config_data):
                 Optional("chunk_overlap"): int,
                 Optional("length_function"): str,
                 Optional("min_chunk_size"): int,
+            },
+            Optional("cache"): {
+                Optional("similarity_evaluation"): {
+                    Optional("strategy"): Or("distance", "exact"),
+                    Optional("max_distance"): float,
+                    Optional("positive"): bool,
+                },
+                Optional("config"): {
+                    Optional("similarity_threshold"): float,
+                    Optional("auto_flush"): int,
+                },
             },
         }
     )
