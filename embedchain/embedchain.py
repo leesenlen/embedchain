@@ -529,6 +529,7 @@ class EmbedChain(JSONSerializable):
         or the dry run result
         :rtype: str, if citations is False, otherwise Tuple[str,List[Tuple[str,str,str]]]
         """
+        # Send anonymous telemetry
         contexts = self._retrieve_from_database(
             input_query=input_query, config=config, where=where, citations=citations, **kwargs
         )
