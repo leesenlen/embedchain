@@ -22,7 +22,7 @@ from embedchain.loaders.base_loader import BaseLoader
 from embedchain.models.data_type import (DataType, DirectDataType,
                                          IndirectDataType, SpecialDataType)
 from embedchain.telemetry.posthog import AnonymousTelemetry
-from embedchain.utils import detect_datatype, is_valid_json_string
+from embedchain.utils.misc import detect_datatype, is_valid_json_string
 from embedchain.vectordb.base import BaseVectorDB
 
 load_dotenv()
@@ -652,18 +652,6 @@ class EmbedChain(JSONSerializable):
         self.db._get_or_create_collection(name)
         # TODO: Check whether it is necessary to assign to the `self.collection` attribute,
         # since the main purpose is the creation.
-
-    def count(self) -> int:
-        """
-        Count the number of embeddings.
-
-        DEPRECATED IN FAVOR OF `db.count()`
-
-        :return: The number of embeddings.
-        :rtype: int
-        """
-        logging.warning("DEPRECATION WARNING: Please use `app.db.count()` instead of `app.count()`.")
-        return self.db.count()
 
     def reset(self):
         """
