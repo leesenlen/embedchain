@@ -22,7 +22,7 @@ class BaseChunker(JSONSerializable):
         logging.info(f"[INFO] Skipping chunks smaller than {min_chunk_size} characters")
 
         src = params["source"]
-        app_id = params.get("app_id",uuid.uuid4()) #应用ID
+        app_id = params.get("app_id",'0') #应用ID
         knowledge_id = params.get("knowledge_id",uuid.uuid4()) #知识库ID
         link = params.get("link",None) #链接
         subject = params.get("subject",None) #主题
@@ -33,6 +33,7 @@ class BaseChunker(JSONSerializable):
         data_records = data_result["data"]
         hash_data = data_result["doc_id"]
         doc_id = app_id + "-" + data_result["doc_id"]
+        hash_file = data_result["hash"]
 
         metadatas = []
         for data in data_records:
@@ -50,7 +51,6 @@ class BaseChunker(JSONSerializable):
             meta_data["subject"] = subject
             meta_data["labels"] = labels
             meta_data["is_public"] = is_public
-            meta_data["source"] = src
 
             url = meta_data["url"]
                    
@@ -67,6 +67,7 @@ class BaseChunker(JSONSerializable):
             "documents": documents,
             "ids": chunk_ids,
             "metadatas": metadatas,
+            "hash_file": hash_file
         }
     
     def create_chunks(self, loader, src, app_id=None, config: Optional[ChunkerConfig] = None):

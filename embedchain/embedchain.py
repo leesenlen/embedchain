@@ -130,11 +130,41 @@ class EmbedChain(JSONSerializable):
             raise ValueError(f"Boolean value expected but got {type(value)}.")
         self.llm.online = value
 
+    def delete_file(
+        self,
+        source: Any,
+        app_id: Optional[str] = None,
+        data_type: Optional[DataType] = None,
+        loader: Optional[BaseLoader] = None):
+        config = AddConfig()
+        if data_type:
+            try:
+                data_type = DataType(data_type)
+            except ValueError:
+                logging.info(
+                    f"Invalid data_type: '{data_type}', using `custom` instead.\n Check docs to pass the valid data type: `https://docs.embedchain.ai/data-sources/overview`"  # noqa: E501
+                )
+                data_type = DataType.CUSTOM
+
+        if not data_type:
+            data_type = detect_datatype(source)
+
+        data_formatter = DataFormatter(data_type, config, loader)
+        data_result = data_formatter.loader.load_data(source)
+
+        if not app_id:
+            app_id = '0'
+        doc_id = app_id + "-" + data_result["doc_id"]
+
+        self.db._delete_by_query({'metadata.doc_id':doc_id})
+
+        
 
     def upsert(
         self,
         params:dict,
         data_type: Optional[DataType] = None,
+        config: Optional[AddConfig] = None,
         loader: Optional[BaseLoader] = None,
         chunker: Optional[BaseChunker] = None):
         if config is not None:
@@ -163,7 +193,7 @@ class EmbedChain(JSONSerializable):
 
         data_formatter = DataFormatter(data_type, config, loader, chunker)
 
-        embeddings_data = chunker.chunks(data_formatter.loader, source, config=config.chunker)
+        embeddings_data = data_formatter.chunker.chunks(data_formatter.loader, params, config=config.chunker)
         # spread chunking results
         documents = embeddings_data["documents"]
         metadatas = embeddings_data["metadatas"]
@@ -176,6 +206,7 @@ class EmbedChain(JSONSerializable):
             metadatas=metadatas,
             ids=ids,
         )
+        return embeddings_data["hash_file"]
         
 
     def add(

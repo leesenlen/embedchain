@@ -20,3 +20,5 @@ class MySQLChunker(BaseChunker):
             length_function=config.length_function,
         )
         super().__init__(text_splitter)
+
+    

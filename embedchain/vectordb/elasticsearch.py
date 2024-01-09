@@ -188,6 +188,45 @@ class ElasticsearchDB(BaseVectorDB):
             bulk(self.client, batch_docs)
         self.client.indices.refresh(index=self._get_index())
 
+    def delete(
+        self,
+        conditionsList: list
+    ):
+        actions = []
+        for conditions in conditionsList:
+            actions.append(
+                {
+                    "_index": self._get_index(),
+                    "_op_type": "delete",
+                    "_query": {
+                        "bool": {
+                            "must": [
+                                {"match": {field: value} for field, value in conditions.items()}
+                            ]
+                        }
+                    }
+                }
+            )
+        bulk(self.client, actions)
+
+    def _delete_by_query(
+        self,
+        conditions: dict    
+    ):
+        query = {
+            "query": {
+                "bool": {
+                    "must": [
+                         {"match": {field: value} for field, value in conditions.items()}
+                    ]
+                }
+            }
+        }
+
+        # 执行删除操作
+        self.client.delete_by_query(index=self._get_index(), body=query)
+            
+
     def query(
         self,
         input_query: List[str],

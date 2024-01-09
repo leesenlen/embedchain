@@ -34,7 +34,9 @@ class PdfFileLoader(BaseLoader):
             )
             all_content.append(content)
         doc_id = hashlib.sha256((" ".join(all_content) + url).encode()).hexdigest()
+        hash_data = hashlib.sha256((" ".join(all_content)).encode()).hexdigest()
         return {
             "doc_id": doc_id,
             "data": data,
+            "hash":hash_data
         }

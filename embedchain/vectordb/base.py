@@ -47,10 +47,6 @@ class BaseVectorDB(JSONSerializable):
     def add(self):
         """Add to database"""
         raise NotImplementedError
-    
-    def upsert(self):
-        """Add to database"""
-        raise NotImplementedError
 
     def query(self):
         """Query contents from vector data base based on vector similarity"""
