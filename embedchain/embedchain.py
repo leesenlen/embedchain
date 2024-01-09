@@ -130,6 +130,54 @@ class EmbedChain(JSONSerializable):
             raise ValueError(f"Boolean value expected but got {type(value)}.")
         self.llm.online = value
 
+
+    def upsert(
+        self,
+        params:dict,
+        data_type: Optional[DataType] = None,
+        loader: Optional[BaseLoader] = None,
+        chunker: Optional[BaseChunker] = None):
+        if config is not None:
+            pass
+        elif self.chunker is not None:
+            config = AddConfig(chunker=self.chunker)
+        else:
+            config = AddConfig()
+        
+        source = params.get("source") #文件路径
+        # app_id = params.get("app_id") #应用ID
+        # knowledge_id = params.get("knowledge_id") #知识点ID
+        # link = params.get("link")
+
+        if data_type:
+            try:
+                data_type = DataType(data_type)
+            except ValueError:
+                logging.info(
+                    f"Invalid data_type: '{data_type}', using `custom` instead.\n Check docs to pass the valid data type: `https://docs.embedchain.ai/data-sources/overview`"  # noqa: E501
+                )
+                data_type = DataType.CUSTOM
+
+        if not data_type:
+            data_type = detect_datatype(source)
+
+        data_formatter = DataFormatter(data_type, config, loader, chunker)
+
+        embeddings_data = chunker.chunks(data_formatter.loader, source, config=config.chunker)
+        # spread chunking results
+        documents = embeddings_data["documents"]
+        metadatas = embeddings_data["metadatas"]
+        ids = embeddings_data["ids"]
+        embeddings = embeddings_data.get("embeddings")
+
+        self.db.upsert(
+            embeddings=embeddings,
+            documents=documents,
+            metadatas=metadatas,
+            ids=ids,
+        )
+        
+
     def add(
         self,
         source: Any,

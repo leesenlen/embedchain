@@ -152,6 +152,42 @@ class ElasticsearchDB(BaseVectorDB):
             bulk(self.client, batch_docs, **kwargs)
         self.client.indices.refresh(index=self._get_index())
 
+    
+    def upsert(
+        self,
+        embeddings: List[List[float]],
+        documents: List[str],
+        metadatas: List[object],
+        ids: List[str],
+        **kwargs: Optional[Dict[str, any]],
+    ) -> Any:
+
+        embeddings = self.embedder.embedding_fn(documents)
+
+        for chunk in chunks(
+            list(zip(ids, documents, metadatas, embeddings)), self.BATCH_SIZE, desc="Inserting batches in elasticsearch"
+        ):  # noqa: E501
+            ids, docs, metadatas, embeddings = [], [], [], []
+            for id, text, metadata, embedding in chunk:
+                ids.append(id)
+                docs.append(text)
+                metadatas.append(metadata)
+                embeddings.append(embedding)
+
+            batch_docs = []
+            for id, text, metadata, embedding in zip(ids, docs, metadatas, embeddings):
+                batch_docs.append(
+                    {
+                        "_index": self._get_index(),
+                        "_id": id,
+                        "_op_type": "update",
+                        "doc": {"text": text, "metadata": metadata, "embeddings": embedding},
+                        "doc_as_upsert": True
+                    }
+                )
+            bulk(self.client, batch_docs)
+        self.client.indices.refresh(index=self._get_index())
+
     def query(
         self,
         input_query: List[str],
