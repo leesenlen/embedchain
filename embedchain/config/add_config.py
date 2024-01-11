@@ -1,7 +1,8 @@
 import builtins
 import logging
+from collections.abc import Callable
 from importlib import import_module
-from typing import Callable, Optional
+from typing import Optional
 
 from embedchain.config.base_config import BaseConfig
 from embedchain.helpers.json_serializable import register_deserializable
@@ -26,7 +27,7 @@ class ChunkerConfig(BaseConfig):
         if self.min_chunk_size >= self.chunk_size:
             raise ValueError(f"min_chunk_size {min_chunk_size} should be less than chunk_size {chunk_size}")
         if self.min_chunk_size < self.chunk_overlap:
-            logging.warn(
+            logging.warning(
                 f"min_chunk_size {min_chunk_size} should be greater than chunk_overlap {chunk_overlap}, otherwise it is redundant."  # noqa:E501
             )
 
@@ -35,7 +36,8 @@ class ChunkerConfig(BaseConfig):
         else:
             self.length_function = length_function if length_function else len
 
-    def load_func(self, dotpath: str):
+    @staticmethod
+    def load_func(dotpath: str):
         if "." not in dotpath:
             return getattr(builtins, dotpath)
         else:

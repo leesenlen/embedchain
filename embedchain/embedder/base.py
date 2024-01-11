@@ -1,4 +1,5 @@
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any, Optional
 
 from embedchain.config.embedder.base import BaseEmbedderConfig
 
@@ -29,7 +30,7 @@ class BaseEmbedder:
 
     def __init__(self, config: Optional[BaseEmbedderConfig] = None):
         """
-        Intialize the embedder class.
+        Initialize the embedder class.
 
         :param config: embedder configuration option class, defaults to None
         :type config: Optional[BaseEmbedderConfig], optional

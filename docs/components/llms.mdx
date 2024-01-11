@@ -14,6 +14,7 @@ Embedchain comes with built-in support for various popular large language models
   <Card title="Cohere" href="#cohere"></Card>
   <Card title="Together" href="#together"></Card>
   <Card title="Ollama" href="#ollama"></Card>
+  <Card title="vLLM" href="#vllm"></Card>
   <Card title="GPT4All" href="#gpt4all"></Card>
   <Card title="JinaChat" href="#jinachat"></Card>
   <Card title="Hugging Face" href="#hugging-face"></Card>
@@ -393,6 +394,35 @@ llm:
 
 </CodeGroup>
 
+
+## vLLM
+
+Setup vLLM by following instructions given in [their docs](https://docs.vllm.ai/en/latest/getting_started/installation.html).
+
+<CodeGroup>
+
+```python main.py
+import os
+from embedchain import App
+
+# load llm configuration from config.yaml file
+app = App.from_config(config_path="config.yaml")
+```
+
+```yaml config.yaml
+llm:
+  provider: vllm
+  config:
+    model: 'meta-llama/Llama-2-70b-hf'
+    temperature: 0.5
+    top_p: 1
+    top_k: 10
+    stream: true
+    trust_remote_code: true
+```
+
+</CodeGroup>
+
 ## GPT4ALL
 
 Install related dependencies using the following command:
@@ -493,6 +523,49 @@ llm:
     stream: false
 ```
 </CodeGroup>
+
+### Custom Endpoints
+
+
+You can also use [Hugging Face Inference Endpoints](https://huggingface.co/docs/inference-endpoints/index#-inference-endpoints) to access custom endpoints. First, set the `HUGGINGFACE_ACCESS_TOKEN` as above.
+
+Then, load the app using the config yaml file:
+
+<CodeGroup>
+
+```python main.py
+import os
+from embedchain import App
+
+os.environ["HUGGINGFACE_ACCESS_TOKEN"] = "xxx"
+
+# load llm configuration from config.yaml file
+app = App.from_config(config_path="config.yaml")
+```
+
+```yaml config.yaml
+llm:
+  provider: huggingface
+  config:
+    endpoint: https://api-inference.huggingface.co/models/gpt2 # replace with your personal endpoint
+```
+</CodeGroup>
+
+If your endpoint requires additional parameters, you can pass them in the `model_kwargs` field:
+
+```
+llm:
+  provider: huggingface
+  config:
+    endpoint: <YOUR_ENDPOINT_URL_HERE>
+    model_kwargs:
+      max_new_tokens: 100
+      temperature: 0.5
+```
+
+Currently only supports `text-generation` and `text2text-generation` for now [[ref](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.huggingface_endpoint.HuggingFaceEndpoint.html?highlight=huggingfaceendpoint#)].
+
+See langchain's [hugging face endpoint](https://python.langchain.com/docs/integrations/chat/huggingface#huggingfaceendpoint) for more information. 
 
 ## Llama2
 
