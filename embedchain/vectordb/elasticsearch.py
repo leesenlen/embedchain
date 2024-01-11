@@ -152,6 +152,11 @@ class ElasticsearchDB(BaseVectorDB):
             bulk(self.client, batch_docs, **kwargs)
         self.client.indices.refresh(index=self._get_index())
 
+    def split_list(self, input_list, chunk_size):
+        """
+        将列表按照指定大小切分为二维数组
+        """
+        return [input_list[i:i + chunk_size] for i in range(0, len(input_list), chunk_size)]
     
     def upsert(
         self,
@@ -161,8 +166,14 @@ class ElasticsearchDB(BaseVectorDB):
         ids: List[str],
         **kwargs: Optional[Dict[str, any]],
     ) -> Any:
-
-        embeddings = self.embedder.embedding_fn(documents)
+        
+        documents_list = self.split_list(documents, 50)
+        embeddings_list = []
+        for documents_chunk in documents_list:
+            embeddings_chunk = self.embedder.embedding_fn(documents_chunk)
+            embeddings_list.append(embeddings_chunk)
+        
+        embeddings = [item for sublist in embeddings_list for item in sublist]
 
         for chunk in chunks(
             list(zip(ids, documents, metadatas, embeddings)), self.BATCH_SIZE, desc="Inserting batches in elasticsearch"
@@ -187,6 +198,26 @@ class ElasticsearchDB(BaseVectorDB):
                 )
             bulk(self.client, batch_docs)
         self.client.indices.refresh(index=self._get_index())
+
+
+    def publish_knowledge(self, conditions: dict):
+        query = {
+            "query": {
+                "bool": {
+                    "must": [{"match": {key: value}} for key, value in conditions.items()]
+                }
+            },
+            "script": {
+                "source": """
+                    if (ctx._source.containsKey('is_public')) {
+                        ctx._source.is_public = 1;
+                    }
+                """,
+                "lang": "painless"
+            }
+        }
+
+        self.client.update_by_query(index=self._get_index(), body=query)
 
     def delete(
         self,
@@ -217,7 +248,7 @@ class ElasticsearchDB(BaseVectorDB):
             "query": {
                 "bool": {
                     "must": [
-                         {"match": {field: value} for field, value in conditions.items()}
+                         {"match": {field: value}} for field, value in conditions.items()
                     ]
                 }
             }
@@ -264,9 +295,11 @@ class ElasticsearchDB(BaseVectorDB):
                 },
             }
         }
-        if "app_id" in where:
-            app_id = where["app_id"]
-            query["script_score"]["query"] = {"match": {"metadata.app_id": app_id}}
+        if where is not None:
+            query["script_score"]["query"] = {"bool": {"must": [{"match": {field: value} for field, value in where.items()}]}}
+        # if "app_id" in where:
+        #     app_id = where["app_id"]
+        #     query["script_score"]["query"] = {"match": {"metadata.app_id": app_id}}
         _source = ["text", "metadata"]
         response = self.client.search(index=self._get_index(), query=query, _source=_source, size=n_results)
         docs = response["hits"]["hits"]

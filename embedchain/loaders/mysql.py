@@ -39,26 +39,124 @@ class MySQLLoader(BaseLoader):
                     Refer `https://docs.embedchain.ai/data-sources/mysql`.",
             )
 
-    def _check_query(self, query):
-        if not isinstance(query, str):
-            raise ValueError(
-                f"Invalid mysql query: {query}",
-                "Provide the valid query to add from mysql, \
-                    make sure you are following `https://docs.embedchain.ai/data-sources/mysql`",
-            )
 
-    def load_data(self, query):
-        self._check_query(query=query)
-        data = []
-        data_content = []
+    def load_data(self, schema: dict):
+        database = None
+        if "database" in schema:
+            database = schema["database"]
+        else:
+            raise ValueError("database is not provided in the source.")
+        table_name = None
+        if "table_name" in schema:
+            table_name = schema["table_name"]
+        else:
+            raise ValueError("table_name is not provided in the source.")
+        
+        return self.fetch_all_id_range(database,table_name,schema)
+  
+        
+
+    # def fetch_all_paginated(self, database, table_name, page_size=50):
+    #     """
+    #     普通分页方式导入数据
+    #     :param database: 数据库名
+    #     :param table_name: 表名
+    #     :param page_size: 每页数据量
+    #     :return:
+    #     """
+    #     page_num = 1
+    #     has_more_data = True
+    #     while has_more_data:
+    #         offset = (page_num - 1) * page_size
+    #         query = f"SELECT * FROM {database}.{table_name} LIMIT {page_size} OFFSET {offset}"
+    #         self.cursor.execute(query)
+    #         result = self.cursor.fetchall()
+
+    #         # 如果返回结果为空，则没有更多数据
+    #         if not result:
+    #             has_more_data = False
+    #         else:
+    #             # 处理当前页的数据（示例）
+    #             for row in result:
+    #                 print(row)
+    #             page_num += 1
+
+    #     self.cursor.close()
+    #     self.connection.close()
+
+    def fetch_all_id_range(self, database, table_name, schema, id_range=1000):
+        """
+        默认以id进行分块导入
+        :param database: 数据库名
+        :param table_name: 表名
+        :param page_size: 每页数据量
+        :return:
+        """
+        columns_string = '*'
+        column_info = []
+        if "columns" in schema and schema['columns'] is not None:
+            for column,value in schema['columns'].items():
+                # if "is_writable" in value and value['is_writable'] is False:
+                #     continue
+                column_info.append(column)
+            columns_string = ','.join(column_info)
+   
+        query = f"SELECT id FROM {database}.{table_name} order by id desc LIMIT 1"
         self.cursor.execute(query)
-        rows = self.cursor.fetchall()
-        for row in rows:
-            doc_content = clean_string(str(row))
-            data.append({"content": doc_content, "meta_data": {"url": query}})
-            data_content.append(doc_content)
-        doc_id = hashlib.sha256((query + ", ".join(data_content)).encode()).hexdigest()
-        return {
-            "doc_id": doc_id,
-            "data": data,
-        }
+        result = self.cursor.fetchone()
+
+        # 获取最大 ID
+        max_id = result['id'] if result else 0
+        data = []
+        start_id = 1
+        end_id = start_id + id_range -1
+        while start_id <= max_id:
+            query = f"SELECT {columns_string} FROM {database}.{table_name} where id between {start_id} and {end_id}"
+            self.cursor.execute(query)
+            result = self.cursor.fetchall()
+
+            # 如果返回结果为空，则没有更多数据
+            if result:
+                for row in result:
+                    primary_key,content = self.parse_row(row,schema)
+                    doc_content = clean_string(str(content))
+                    data.append({"primary_key": primary_key,"content": doc_content, "meta_data": {"url": query,"fields":row}})
+        
+            start_id = end_id + 1
+            end_id = start_id + id_range -1
+
+        self.cursor.close()
+        self.connection.close()
+        return data
+        
+        
+
+    def parse_row(self,row:dict,schema:dict):
+        primary_key = row['id']
+        if "primary_key" in schema and schema['primary_key'] is not None:
+            split = schema['primary_key'].split(",")
+            value = []
+            for key in split:
+                value.append(row[key])
+            primary_key = '_'.join(value)
+
+        content = {}
+        if "columns" in schema and schema['columns'] is not None:
+            for column,value in schema['columns'].items():
+                if "is_writable" in value and value['is_writable'] is False:
+                    continue
+                if "description" in value:
+                    content[value['description']] = row[column]
+        else:
+            content = row
+            
+        return primary_key,content
+
+
+
+        
+        
+
+
+
+

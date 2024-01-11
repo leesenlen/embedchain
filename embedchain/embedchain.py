@@ -157,8 +157,22 @@ class EmbedChain(JSONSerializable):
         doc_id = app_id + "-" + data_result["doc_id"]
 
         self.db._delete_by_query({'metadata.doc_id':doc_id})
+    
 
-        
+    def delete(
+        self,
+        conditions: dict):
+    
+        self.db._delete_by_query({"metadata."+field: value for field, value in conditions.items()})
+
+    def publish_knowledge(
+        self,
+        knowledge_id: str
+    ):
+        """
+        发布知识库
+        """
+        self.db.publish_knowledge({"metadata.knowledge_id": knowledge_id})    
 
     def upsert(
         self,

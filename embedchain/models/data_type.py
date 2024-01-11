@@ -40,6 +40,7 @@ class IndirectDataType(Enum):
     SLACK = "slack"
     DROPBOX = "dropbox"
     TEXT_FILE = "text_file"
+    MYSQL = "mysql"
 
 
 class SpecialDataType(Enum):
@@ -79,3 +80,4 @@ class DataType(Enum):
     SLACK = IndirectDataType.SLACK.value
     DROPBOX = IndirectDataType.DROPBOX.value
     TEXT_FILE = IndirectDataType.TEXT_FILE.value
+    MYSQL = IndirectDataType.MYSQL.value

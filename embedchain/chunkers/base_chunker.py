@@ -27,7 +27,7 @@ class BaseChunker(JSONSerializable):
         link = params.get("link",None) #链接
         subject = params.get("subject",None) #主题
         labels = params.get("labels",None) #标签
-        is_public = params.get("is_public",1) #是否开放
+        is_public = params.get("is_public",0) #是否开放
 
         data_result = loader.load_data(src)
         data_records = data_result["data"]
