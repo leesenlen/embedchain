@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "embedchain"
-version = "0.1.52"
+version = "0.1.60"
 description = "Data platform for LLMs - Load, index, retrieve and sync any unstructured data"
 authors = [
     "Taranjeet Singh <taranjeet@embedchain.ai>",
@@ -22,7 +22,7 @@ build-backend = "poetry.core.masonry.api"
 requires = ["poetry-core"]
 
 [tool.ruff]
-select = ["E", "F"]
+select = ["ASYNC", "E", "F"]
 ignore = []
 fixable = ["ALL"]
 unfixable = []
@@ -142,7 +142,6 @@ newspaper3k = { version = "^0.2.8", optional = true }
 listparser = { version = "^0.19", optional = true }
 google-generativeai = { version = "^0.3.0", optional = true }
 modal = { version = "^0.56.4329", optional = true }
-ipykernel = "^6.27.1"
 dropbox = { version = "^11.36.2", optional = true }
 google-api-python-client = { version = "^2.111.0", optional = true }
 google-auth-oauthlib = { version = "^1.2.0", optional = true }
@@ -153,7 +152,7 @@ google-api-core = { version = "^2.15.0", optional = true }
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"
 pre-commit = "^3.2.2"
-ruff = "^0.0.220"
+ruff = "^0.1.11"
 pytest = "^7.3.1"
 pytest-mock = "^3.10.0"
 pytest-env = "^0.8.1"
@@ -163,6 +162,7 @@ pytest-cov = "^4.1.0"
 responses = "^0.23.3"
 mock = "^5.1.0"
 pytest-asyncio = "^0.21.1"
+ipykernel = "^6.28.0"
 
 [tool.poetry.extras]
 streamlit = ["streamlit"]
@@ -214,8 +214,6 @@ rss_feed = [
 google = ["google-generativeai"]
 modal = ["modal"]
 dropbox = ["dropbox"]
-
-[tool.poetry.group.docs.dependencies]
 
 [tool.poetry.scripts]
 ec = "embedchain.cli:cli"

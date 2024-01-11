@@ -2,12 +2,12 @@ import hashlib
 import json
 import os
 import re
-from typing import Dict, List, Union
+from typing import Union
 
 import requests
 
 from embedchain.loaders.base_loader import BaseLoader
-from embedchain.utils import clean_string, is_valid_json_string
+from embedchain.utils.misc import clean_string, is_valid_json_string
 
 
 class JSONReader:
@@ -15,14 +15,15 @@ class JSONReader:
         """Initialize the JSONReader."""
         pass
 
-    def load_data(self, json_data: Union[Dict, str]) -> List[str]:
+    @staticmethod
+    def load_data(json_data: Union[dict, str]) -> list[str]:
         """Load data from a JSON structure.
 
         Args:
-            json_data (Union[Dict, str]): The JSON data to load.
+            json_data (Union[dict, str]): The JSON data to load.
 
         Returns:
-            List[str]: A list of strings representing the leaf nodes of the JSON.
+            list[str]: A list of strings representing the leaf nodes of the JSON.
         """
         if isinstance(json_data, str):
             json_data = json.loads(json_data)
@@ -35,7 +36,7 @@ class JSONReader:
         return ["\n".join(useful_lines)]
 
 
-VALID_URL_PATTERN = "^https:\/\/[0-9A-z.]+.[0-9A-z.]+.[a-z]+\/.*\.json$"
+VALID_URL_PATTERN = "^https:\/\/[0-9A-Za-z]+(\.[0-9A-Za-z]+)*\/[0-9A-Za-z_\/]*\.json$"
 
 
 class JSONLoader(BaseLoader):

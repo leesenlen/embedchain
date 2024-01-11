@@ -1,13 +1,13 @@
 import hashlib
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from embedchain.loaders.base_loader import BaseLoader
-from embedchain.utils import clean_string
+from embedchain.utils.misc import clean_string
 
 
 class MySQLLoader(BaseLoader):
-    def __init__(self, config: Optional[Dict[str, Any]]):
+    def __init__(self, config: Optional[dict[str, Any]]):
         super().__init__()
         if not config:
             raise ValueError(
@@ -20,7 +20,7 @@ class MySQLLoader(BaseLoader):
         self.cursor = None
         self._setup_loader(config=config)
 
-    def _setup_loader(self, config: Dict[str, Any]):
+    def _setup_loader(self, config: dict[str, Any]):
         try:
             import mysql.connector as sqlconnector
         except ImportError as e:
@@ -58,10 +58,10 @@ class MySQLLoader(BaseLoader):
 
     # def fetch_all_paginated(self, database, table_name, page_size=50):
     #     """
-    #     æ™®é€šåˆ†é¡µæ–¹å¼å¯¼å…¥æ•°æ®
-    #     :param database: æ•°æ®åº“å
-    #     :param table_name: è¡¨å
-    #     :param page_size: æ¯é¡µæ•°æ®é‡
+    #     ÆÕÍ¨·ÖÒ³·½Ê½µ¼ÈëÊı¾İ
+    #     :param database: Êı¾İ¿âÃû
+    #     :param table_name: ±íÃû
+    #     :param page_size: Ã¿Ò³Êı¾İÁ¿
     #     :return:
     #     """
     #     page_num = 1
@@ -72,11 +72,11 @@ class MySQLLoader(BaseLoader):
     #         self.cursor.execute(query)
     #         result = self.cursor.fetchall()
 
-    #         # å¦‚æœè¿”å›ç»“æœä¸ºç©ºï¼Œåˆ™æ²¡æœ‰æ›´å¤šæ•°æ®
+    #         # Èç¹û·µ»Ø½á¹ûÎª¿Õ£¬ÔòÃ»ÓĞ¸ü¶àÊı¾İ
     #         if not result:
     #             has_more_data = False
     #         else:
-    #             # å¤„ç†å½“å‰é¡µçš„æ•°æ®ï¼ˆç¤ºä¾‹ï¼‰
+    #             # ´¦Àíµ±Ç°Ò³µÄÊı¾İ£¨Ê¾Àı£©
     #             for row in result:
     #                 print(row)
     #             page_num += 1
@@ -86,10 +86,10 @@ class MySQLLoader(BaseLoader):
 
     def fetch_all_id_range(self, database, table_name, schema, id_range=1000):
         """
-        é»˜è®¤ä»¥idè¿›è¡Œåˆ†å—å¯¼å…¥
-        :param database: æ•°æ®åº“å
-        :param table_name: è¡¨å
-        :param page_size: æ¯é¡µæ•°æ®é‡
+        Ä¬ÈÏÒÔid½øĞĞ·Ö¿éµ¼Èë
+        :param database: Êı¾İ¿âÃû
+        :param table_name: ±íÃû
+        :param page_size: Ã¿Ò³Êı¾İÁ¿
         :return:
         """
         columns_string = '*'
@@ -105,7 +105,7 @@ class MySQLLoader(BaseLoader):
         self.cursor.execute(query)
         result = self.cursor.fetchone()
 
-        # è·å–æœ€å¤§ ID
+        # »ñÈ¡×î´ó ID
         max_id = result['id'] if result else 0
         data = []
         start_id = 1
@@ -115,7 +115,7 @@ class MySQLLoader(BaseLoader):
             self.cursor.execute(query)
             result = self.cursor.fetchall()
 
-            # å¦‚æœè¿”å›ç»“æœä¸ºç©ºï¼Œåˆ™æ²¡æœ‰æ›´å¤šæ•°æ®
+            # Èç¹û·µ»Ø½á¹ûÎª¿Õ£¬ÔòÃ»ÓĞ¸ü¶àÊı¾İ
             if result:
                 for row in result:
                     primary_key,content = self.parse_row(row,schema)

@@ -1,16 +1,16 @@
 import hashlib
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import requests
 
 from embedchain.loaders.base_loader import BaseLoader
-from embedchain.utils import clean_string
+from embedchain.utils.misc import clean_string
 
 
 class DiscourseLoader(BaseLoader):
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[dict[str, Any]] = None):
         super().__init__()
         if not config:
             raise ValueError(

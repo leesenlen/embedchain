@@ -1,11 +1,12 @@
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any, Optional
 
 from embedchain.config.embedder.base import BaseEmbedderConfig
 
 try:
     from chromadb.api.types import Embeddable, EmbeddingFunction, Embeddings
 except RuntimeError:
-    from embedchain.utils import use_pysqlite3
+    from embedchain.utils.misc import use_pysqlite3
 
     use_pysqlite3()
     from chromadb.api.types import Embeddable, EmbeddingFunction, Embeddings
@@ -29,7 +30,7 @@ class BaseEmbedder:
 
     def __init__(self, config: Optional[BaseEmbedderConfig] = None):
         """
-        Intialize the embedder class.
+        Initialize the embedder class.
 
         :param config: embedder configuration option class, defaults to None
         :type config: Optional[BaseEmbedderConfig], optional

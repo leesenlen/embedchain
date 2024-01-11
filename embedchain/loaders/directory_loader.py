@@ -1,21 +1,21 @@
 import hashlib
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from embedchain.config import AddConfig
 from embedchain.data_formatter.data_formatter import DataFormatter
 from embedchain.helpers.json_serializable import register_deserializable
 from embedchain.loaders.base_loader import BaseLoader
 from embedchain.loaders.text_file import TextFileLoader
-from embedchain.utils import detect_datatype
+from embedchain.utils.misc import detect_datatype
 
 
 @register_deserializable
 class DirectoryLoader(BaseLoader):
     """Load data from a directory."""
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[dict[str, Any]] = None):
         super().__init__()
         config = config or {}
         self.recursive = config.get("recursive", True)
@@ -32,7 +32,7 @@ class DirectoryLoader(BaseLoader):
         doc_id = hashlib.sha256((str(data_list) + str(directory_path)).encode()).hexdigest()
 
         for error in self.errors:
-            logging.warn(error)
+            logging.warning(error)
 
         return {"doc_id": doc_id, "data": data_list}
 

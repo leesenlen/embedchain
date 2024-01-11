@@ -344,7 +344,7 @@ def detect_datatype(source: Any) -> DataType:
             return DataType.TEXT_FILE
 
         # If the source is a valid file, that's not detectable as a type, an error is raised.
-        # It does not fallback to text.
+        # It does not fall back to text.
         raise ValueError(
             "Source points to a valid file, but based on the filename, no `data_type` can be detected. Please be aware, that not all data_types allow conventional file references, some require the use of the `file URI scheme`. Please refer to the embedchain documentation (https://docs.embedchain.ai/advanced/data_types#remote-data-types)."  # noqa: E501
         )
@@ -414,6 +414,7 @@ def validate_config(config_data):
                     Optional("where"): dict,
                     Optional("query_type"): str,
                     Optional("api_key"): str,
+                    Optional("endpoint"): str,
                 },
             },
             Optional("vectordb"): {

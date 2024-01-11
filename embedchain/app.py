@@ -4,7 +4,7 @@ import logging
 import os
 import sqlite3
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import requests
 import yaml
@@ -23,11 +23,11 @@ from embedchain.helpers.json_serializable import register_deserializable
 from embedchain.llm.base import BaseLlm
 from embedchain.llm.openai import OpenAILlm
 from embedchain.telemetry.posthog import AnonymousTelemetry
-from embedchain.utils import validate_config
+from embedchain.utils.misc import validate_config
 from embedchain.vectordb.base import BaseVectorDB
 from embedchain.vectordb.chroma import ChromaDB
 
-# Setup the user directory if doesn't exist already
+# Set up the user directory if it doesn't exist already
 Client.setup_dir()
 
 
@@ -364,7 +364,7 @@ class App(EmbedChain):
     def from_config(
         cls,
         config_path: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        config: Optional[dict[str, Any]] = None,
         auto_deploy: bool = False,
         yaml_path: Optional[str] = None,
     ):
@@ -374,7 +374,7 @@ class App(EmbedChain):
         :param config_path: Path to the YAML or JSON configuration file.
         :type config_path: Optional[str]
         :param config: A dictionary containing the configuration.
-        :type config: Optional[Dict[str, Any]]
+        :type config: Optional[dict[str, Any]]
         :param auto_deploy: Whether to deploy the pipeline automatically, defaults to False
         :type auto_deploy: bool, optional
         :param yaml_path: (Deprecated) Path to the YAML configuration file. Use config_path instead.
@@ -393,7 +393,7 @@ class App(EmbedChain):
 
         if config_path:
             file_extension = os.path.splitext(config_path)[1]
-            with open(config_path, "r") as file:
+            with open(config_path, "r", encoding="UTF-8") as file:
                 if file_extension in [".yaml", ".yml"]:
                     config_data = yaml.safe_load(file)
                 elif file_extension == ".json":

@@ -1,7 +1,8 @@
 import importlib
 import logging
 import os
-from typing import Any, Generator, Optional, Union
+from collections.abc import Generator
+from typing import Any, Optional, Union
 
 import google.generativeai as genai
 
@@ -44,7 +45,7 @@ class GoogleLlm(BaseLlm):
             "temperature": self.config.temperature or 0.5,
         }
 
-        if self.config.top_p >= 0.0 and self.config.top_p <= 1.0:
+        if 0.0 <= self.config.top_p <= 1.0:
             generation_config_params["top_p"] = self.config.top_p
         else:
             raise ValueError("`top_p` must be > 0.0 and < 1.0")

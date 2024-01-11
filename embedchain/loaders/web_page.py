@@ -12,7 +12,7 @@ except ImportError:
 
 from embedchain.helpers.json_serializable import register_deserializable
 from embedchain.loaders.base_loader import BaseLoader
-from embedchain.utils import clean_string
+from embedchain.utils.misc import clean_string
 
 
 @register_deserializable
@@ -21,7 +21,7 @@ class WebPageLoader(BaseLoader):
     _session = requests.Session()
 
     def load_data(self, url):
-        """Load data from a web page using a shared requests session."""
+        """Load data from a web page using a shared requests' session."""
         response = self._session.get(url, timeout=30)
         response.raise_for_status()
         data = response.content
@@ -42,7 +42,8 @@ class WebPageLoader(BaseLoader):
             "hash": hash_data
         }
 
-    def _get_clean_content(self, html, url) -> str:
+    @staticmethod
+    def _get_clean_content(html, url) -> str:
         soup = BeautifulSoup(html, "html.parser")
         original_size = len(str(soup.get_text()))
 
@@ -62,8 +63,8 @@ class WebPageLoader(BaseLoader):
             tag.decompose()
 
         ids_to_exclude = ["sidebar", "main-navigation", "menu-main-menu"]
-        for id in ids_to_exclude:
-            tags = soup.find_all(id=id)
+        for id_ in ids_to_exclude:
+            tags = soup.find_all(id=id_)
             for tag in tags:
                 tag.decompose()
 
