@@ -7,12 +7,9 @@ from typing import Any, Optional, Union
 from dotenv import load_dotenv
 from langchain.docstore.document import Document
 
-from embedchain.cache import (
-    adapt,
-    get_gptcache_session,
-    gptcache_data_convert,
-    gptcache_update_cache_callback,
-)
+from embedchain.cache import (adapt, get_gptcache_session,
+                              gptcache_data_convert,
+                              gptcache_update_cache_callback)
 from embedchain.chunkers.base_chunker import BaseChunker
 from embedchain.config import AddConfig, BaseLlmConfig, ChunkerConfig
 from embedchain.config.base_app_config import BaseAppConfig
@@ -22,7 +19,8 @@ from embedchain.embedder.base import BaseEmbedder
 from embedchain.helpers.json_serializable import JSONSerializable
 from embedchain.llm.base import BaseLlm
 from embedchain.loaders.base_loader import BaseLoader
-from embedchain.models.data_type import DataType, DirectDataType, IndirectDataType, SpecialDataType
+from embedchain.models.data_type import (DataType, DirectDataType,
+                                         IndirectDataType, SpecialDataType)
 from embedchain.telemetry.posthog import AnonymousTelemetry
 from embedchain.utils.misc import detect_datatype, is_valid_json_string
 from embedchain.vectordb.base import BaseVectorDB
@@ -758,13 +756,17 @@ class EmbedChain(JSONSerializable):
         self.db.reset()
         self.cursor.execute("DELETE FROM data_sources WHERE pipeline_id = ?", (self.config.id,))
         self.connection.commit()
-        self.delete_chat_history()
+        self.delete_all_chat_history(app_id=self.config.id)
         # Send anonymous telemetry
         self.telemetry.capture(event_name="reset", properties=self._telemetry_props)
 
     def get_history(self, num_rounds: int = 10, display_format: bool = True):
         return self.llm.memory.get(app_id=self.config.id, num_rounds=num_rounds, display_format=display_format)
 
-    def delete_chat_history(self, session_id: str = "default"):
+    def delete_session_chat_history(self, session_id: str = "default"):
         self.llm.memory.delete(app_id=self.config.id, session_id=session_id)
         self.llm.update_history(app_id=self.config.id)
+
+    def delete_all_chat_history(self, app_id: str):
+        self.llm.memory.delete(app_id=app_id)
+        self.llm.update_history(app_id=app_id)

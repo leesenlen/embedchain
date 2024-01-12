@@ -5619,6 +5619,16 @@ files = [
 ]
 
 [[package]]
+name = "pysbd"
+version = "0.3.4"
+description = "pysbd (Python Sentence Boundary Disambiguation) is a rule-based sentence boundary detection that works out-of-the-box across many languages."
+optional = false
+python-versions = ">=3"
+files = [
+    {file = "pysbd-0.3.4-py3-none-any.whl", hash = "sha256:cd838939b7b0b185fcf86b0baf6636667dfb6e474743beeff878e9f42e022953"},
+]
+
+[[package]]
 name = "pytesseract"
 version = "0.3.10"
 description = "Python-tesseract is a python wrapper for Google's Tesseract-OCR"
@@ -8641,8 +8651,5 @@ youtube = ["youtube-transcript-api", "yt_dlp"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.12"
-<<<<<<< HEAD
-content-hash = "4d9abc858e281700fa94e6bfba75031c9fc3bec7ecbc4efd2b72d87784e2ba37"
-=======
-content-hash = "e22ac2ddd59d53039c47f326504364ff3a8000df9a954d79fbe671c75e88599f"
->>>>>>> 9e24aee40dca4f452315e6271da680308fa3387c
+content-hash = "02bd85e14374a9dc9b59523b8fb4baea7068251976ba7f87722cac94a9974ccc"
+
