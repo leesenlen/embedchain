@@ -134,15 +134,15 @@ class MySQLLoader(BaseLoader):
             split = schema['primary_key'].split(",")
             value = []
             for key in split:
-                value.append(row[key])
+                value.append(str(row[key]))
             primary_key = '_'.join(value)
 
         content = {}
         if "columns" in schema and schema['columns'] is not None:
             for column,value in schema['columns'].items():
-                if "is_writable" in value and value['is_writable'] is False:
+                if value is not None and "is_writable" in value and value['is_writable'] is False:
                     continue
-                if "description" in value:
+                if value is not None and "description" in value:
                     content[value['description']] = row[column]
         else:
             content = row
