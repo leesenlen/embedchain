@@ -160,11 +160,11 @@ class ElasticsearchDB(BaseVectorDB):
     
     def upsert(
         self,
-        embeddings: List[List[float]],
-        documents: List[str],
-        metadatas: List[object],
-        ids: List[str],
-        **kwargs: Optional[Dict[str, any]],
+        embeddings: list[list[float]],
+        documents: list[str],
+        metadatas: list[object],
+        ids: list[str],
+        **kwargs: Optional[dict[str, any]],
     ) -> Any:
         
         documents_list = self.split_list(documents, 50)
