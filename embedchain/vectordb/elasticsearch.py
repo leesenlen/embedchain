@@ -257,6 +257,44 @@ class ElasticsearchDB(BaseVectorDB):
         # 执行删除操作
         self.client.delete_by_query(index=self._get_index(), body=query)
             
+    def multi_field_match_query(
+        self,
+        input_query: list[str],
+        and_conditions: dict[str, any],
+        or_conditions: dict[str, any]
+    ) -> Union[list[tuple[str, dict]], list[str]]:
+
+        input_query_vector = self.embedder.embedding_fn(input_query)
+        query_vector = input_query_vector[0]
+
+        query = {
+            "script_score": {
+                "query": {"bool": {"must": [{"exists": {"field": "text"}}]}},
+                "script": {
+                    "source": "cosineSimilarity(params.input_query_vector, 'embeddings') + 1.0",
+                    "params": {"input_query_vector": query_vector},
+                },
+            }
+        }
+        if and_conditions is not None:
+            query["script_score"]["query"] = {"bool": {"must": [{"match": {field: value} for field, value in and_conditions.items()}]}}
+        if or_conditions is not None:
+            query["script_score"]["query"] = {"bool": {"should": [{"match": {field: value} for field, value in or_conditions.items()}]}}
+        
+        _source = ["text", "metadata"]
+        response = self.client.search(index=self._get_index(), query=query, _source=_source, size=5)
+        docs = response["hits"]["hits"]
+        contexts = []
+        for doc in docs:
+            context = doc["_source"]["text"]
+            # if citations:
+            #     metadata = doc["_source"]["metadata"]
+            #     metadata["score"] = doc["_score"]
+            #     contexts.append(tuple((context, metadata)))
+            # else:
+            contexts.append(context)
+        return contexts
+
 
     def query(
         self,

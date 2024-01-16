@@ -81,6 +81,8 @@ class DataFormatter(JSONSerializable):
             DataType.DROPBOX: "embedchain.loaders.dropbox.DropboxLoader",
             DataType.TEXT_FILE: "embedchain.loaders.text_file.TextFileLoader",
             DataType.MYSQL: "embedchain.loaders.mysql.MySQLLoader",
+            DataType.PPT : "embedchain.loaders.ppt.PPTLoader",
+            DataType.MD : "embedchain.loaders.markdown.MarkdownLoader",
         }
 
         if data_type == DataType.CUSTOM or loader is not None:
@@ -128,7 +130,9 @@ class DataFormatter(JSONSerializable):
             DataType.SLACK: "embedchain.chunkers.common_chunker.CommonChunker",
             DataType.DROPBOX: "embedchain.chunkers.common_chunker.CommonChunker",
             DataType.TEXT_FILE: "embedchain.chunkers.common_chunker.CommonChunker",
-            DataType.MYSQL: "embedchain.chunkers.mysql.MySQLChunker"
+            DataType.MYSQL: "embedchain.chunkers.mysql.MySQLChunker",
+            DataType.PPT: "embedchain.chunkers.common_chunker.CommonChunker",
+            DataType.MD: "embedchain.chunkers.common_chunker.CommonChunker",
         }
 
         if chunker is not None:

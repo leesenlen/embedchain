@@ -41,6 +41,8 @@ class IndirectDataType(Enum):
     DROPBOX = "dropbox"
     TEXT_FILE = "text_file"
     MYSQL = "mysql"
+    PPT = "ppt"
+    MD = "md"
 
 
 class SpecialDataType(Enum):
@@ -81,3 +83,5 @@ class DataType(Enum):
     DROPBOX = IndirectDataType.DROPBOX.value
     TEXT_FILE = IndirectDataType.TEXT_FILE.value
     MYSQL = IndirectDataType.MYSQL.value
+    PPT = IndirectDataType.PPT.value
+    MD = IndirectDataType.MD.value
