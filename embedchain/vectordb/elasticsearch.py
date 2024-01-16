@@ -295,6 +295,44 @@ class ElasticsearchDB(BaseVectorDB):
             contexts.append(context)
         return contexts
 
+    def knn_search(
+        self,
+        input_query: list[str]):
+        input_query_vector = self.embedder.embedding_fn(input_query)
+        query_vector = input_query_vector[0]
+        # query = {
+        #     "knn": {
+        #         "field": "embeddings",
+        #         "query_vector": query_vector,
+        #         "k": 5,
+        #         "num_candidates": 50,
+        #         "filter": {
+        #         "term": {
+        #             "file-type": "png"
+        #         }
+        #         }
+        #     }
+
+        # }
+        knn = {
+            "field": "embeddings",
+            "query_vector": query_vector,
+            "k": 10,
+            "num_candidates": 100,
+        }
+        response = self.client.knn_search(index=self._get_index(), knn=knn)
+        docs = response["hits"]["hits"]
+        contexts = []
+        for doc in docs:
+            context = doc["_source"]["text"]
+            # if citations:
+            #     metadata = doc["_source"]["metadata"]
+            #     metadata["score"] = doc["_score"]
+            #     contexts.append(tuple((context, metadata)))
+            # else:
+            contexts.append(context)
+        return contexts
+        
 
     def query(
         self,

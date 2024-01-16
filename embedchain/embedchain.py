@@ -557,19 +557,35 @@ class EmbedChain(JSONSerializable):
         citations: bool = False,
         **kwargs: Optional[dict[str, Any]],
     ) -> Union[list[tuple[str, str, str]], list[str]]:
-        query_config = config or self.llm.config
-        if where is not None:
-            where = where
-        else:
-            where = {}
-            if query_config is not None and query_config.where is not None:
-                where = query_config.where
+        """
+        Queries the vector database based on the given input query.
+        Gets relevant doc based on the query
 
-            if self.config.id is not None:
-                where.update({"app_id": self.config.id})
+        :param input_query: The query to use.
+        :type input_query: str
+        :param config: The query configuration, defaults to None
+        :type config: Optional[BaseLlmConfig], optional
+        :param where: A dictionary of key-value pairs to filter the database results, defaults to None
+        :type where: _type_, optional
+        :param citations: A boolean to indicate if db should fetch citation source
+        :type citations: bool
+        :return: List of contents of the document that matched your query
+        :rtype: list[str]
+        """
+        query_config = config or self.llm.config
+        # if where is not None:
+        #     where = where
+        # else:
+        #     where = {}
+        #     if query_config is not None and query_config.where is not None:
+        #         where = query_config.where
+
+        #     if self.config.id is not None:
+        #         where.update({"app_id": self.config.id})
 
         contexts = self.db.query(
             input_query=input_query,
+            n_results=query_config.number_documents,
             where=where,
             citations=citations,
             **kwargs,
@@ -579,8 +595,8 @@ class EmbedChain(JSONSerializable):
     def multi_field_match_query(
         self,
         input_query: str,
-        and_conditions: dict[str, any],
-        or_conditions: dict[str, any]
+        and_conditions: Optional[dict[str, any]] = None,
+        or_conditions: Optional[dict[str, any]] = None
     ) -> Union[list[tuple[str, str, str]], list[str]]:
         
 
@@ -590,6 +606,12 @@ class EmbedChain(JSONSerializable):
             or_conditions=or_conditions
         )
         return contexts
+    
+    def knn_search(
+        self,
+        input_query: str
+    ):
+        return self.db.knn_search(input_query)
 
     def query(
         self,
