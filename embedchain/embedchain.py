@@ -176,8 +176,9 @@ class EmbedChain(JSONSerializable):
 
     def upsert(
         self,
-        params:dict,
+        source: Any,
         data_type: Optional[DataType] = None,
+        metadata: Optional[dict[str, Any]] = None,
         config: Optional[AddConfig] = None,
         loader: Optional[BaseLoader] = None,
         chunker: Optional[BaseChunker] = None):
@@ -187,11 +188,6 @@ class EmbedChain(JSONSerializable):
             config = AddConfig(chunker=self.chunker)
         else:
             config = AddConfig()
-        
-        source = params.get("source") #文件路径
-        # app_id = params.get("app_id") #应用ID
-        # knowledge_id = params.get("knowledge_id") #知识点ID
-        # link = params.get("link")
 
         if data_type:
             try:
@@ -207,12 +203,22 @@ class EmbedChain(JSONSerializable):
 
         data_formatter = DataFormatter(data_type, config, loader, chunker)
 
-        embeddings_data = data_formatter.chunker.chunks(data_formatter.loader, params, config=config.chunker)
+        embeddings_data = data_formatter.chunker.chunks(data_formatter.loader, source, metadata, config=config.chunker)
         # spread chunking results
         documents = embeddings_data["documents"]
         metadatas = embeddings_data["metadatas"]
         ids = embeddings_data["ids"]
         embeddings = embeddings_data.get("embeddings")
+
+        new_metadatas = []
+        for m in metadatas:
+            # Note: Metadata is the function argument
+            if metadata:
+                # Spread whatever is in metadata into the new object.
+                m.update(metadata)
+
+            new_metadatas.append(m)
+        metadatas = new_metadatas
 
         self.db.upsert(
             embeddings=embeddings,

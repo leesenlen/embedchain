@@ -1,6 +1,6 @@
 import hashlib
 import logging
-from typing import Optional
+from typing import Optional,Any
 import uuid
 
 from embedchain.config.add_config import ChunkerConfig
@@ -14,25 +14,25 @@ class BaseChunker(JSONSerializable):
         self.text_splitter = text_splitter
         self.data_type = None
 
-    def chunks(self, loader, params, config: Optional[ChunkerConfig] = None):
+    def chunks(self, loader, src, metadata: Optional[dict[str, Any]] = None,config: Optional[ChunkerConfig] = None):
         documents = []
         chunk_ids = []
         idMap = {}
         min_chunk_size = config.min_chunk_size if config is not None else 1
         logging.info(f"[INFO] Skipping chunks smaller than {min_chunk_size} characters")
 
-        src = params["source"]
-        app_id = params.get("app_id",'0') #应用ID
-        knowledge_id = params.get("knowledge_id",uuid.uuid4()) #知识库ID
-        link = params.get("link",None) #链接
-        subject = params.get("subject",None) #主题
-        labels = params.get("labels",None) #标签
-        is_public = params.get("is_public",0) #是否开放
+        app_id = metadata.get("app_id",'0') #应用ID
+        knowledge_id = metadata.get("knowledge_id",uuid.uuid4()) #知识库ID   
+        subject = metadata.get("subject",None) #主题
+        doc_id = metadata.get("doc_id",None)
 
         data_result = loader.load_data(src)
         data_records = data_result["data"]
         hash_data = data_result["doc_id"]
-        doc_id = app_id + "-" + data_result["doc_id"]
+        if doc_id is None:
+            doc_id = str(app_id) + "-" + data_result["doc_id"]
+        else:
+            doc_id = str(app_id) + "-" + str(doc_id)
         hash_file = data_result["hash"]
 
         metadatas = []
@@ -47,15 +47,13 @@ class BaseChunker(JSONSerializable):
             meta_data["knowledge_id"] = knowledge_id
             meta_data["hash"] = hash_data
             meta_data["data_type"] = self.data_type.value
-            
-            meta_data["link"] = link
+
             meta_data["subject"] = subject if subject is not None else url
-            meta_data["labels"] = labels
-            meta_data["is_public"] = is_public
+
     
             chunks = self.get_chunks(content)
             for chunk in chunks:
-                chunk_id = doc_id + "-" + hashlib.sha256((chunk + url).encode()).hexdigest()
+                chunk_id = str(doc_id) + "-" + hashlib.sha256((chunk + url).encode()).hexdigest()
      
                 if idMap.get(chunk_id) is None and len(chunk) >= min_chunk_size:
                     idMap[chunk_id] = True
