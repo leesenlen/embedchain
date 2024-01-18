@@ -224,13 +224,21 @@ def detect_datatype(source: Any) -> DataType:
             logging.debug(f"Source of `{formatted_source}` detected as `csv`.")
             return DataType.CSV
 
-        if url.path.endswith(".mdx") or url.path.endswith(".md"):
+        if url.path.endswith(".mdx"):
             logging.debug(f"Source of `{formatted_source}` detected as `mdx`.")
             return DataType.MDX
+        
+        if url.path.endswith(".md"):
+            logging.debug(f"Source of `{formatted_source}` detected as `md`.")
+            return DataType.MD
 
-        if url.path.endswith(".docx"):
+        if url.path.endswith(".docx") or url.path.endswith(".doc"):
             logging.debug(f"Source of `{formatted_source}` detected as `docx`.")
             return DataType.DOCX
+        
+        if url.path.endswith(".pptx") or url.path.endswith(".ppt"):
+            logging.debug(f"Source of `{formatted_source}` detected as `ppt`.")
+            return DataType.PPT
 
         if url.path.endswith(".yaml"):
             try:
@@ -296,7 +304,7 @@ def detect_datatype(source: Any) -> DataType:
         # For datatypes that support conventional file references.
         # Note: checking for string is not necessary anymore.
 
-        if source.endswith(".docx"):
+        if source.endswith(".docx") or source.endswith(".doc"):
             logging.debug(f"Source of `{formatted_source}` detected as `docx`.")
             return DataType.DOCX
 
@@ -308,9 +316,13 @@ def detect_datatype(source: Any) -> DataType:
             logging.debug(f"Source of `{formatted_source}` detected as `xml`.")
             return DataType.XML
 
-        if source.endswith(".mdx") or source.endswith(".md"):
+        if source.endswith(".mdx"):
             logging.debug(f"Source of `{formatted_source}` detected as `mdx`.")
             return DataType.MDX
+        
+        if source.endswith(".md"):
+            logging.debug(f"Source of `{formatted_source}` detected as `md`.")
+            return DataType.MD
 
         if source.endswith(".txt"):
             logging.debug(f"Source of `{formatted_source}` detected as `text`.")
@@ -319,6 +331,10 @@ def detect_datatype(source: Any) -> DataType:
         if source.endswith(".pdf"):
             logging.debug(f"Source of `{formatted_source}` detected as `pdf_file`.")
             return DataType.PDF_FILE
+        
+        if source.endswith(".pptx") or source.endswith(".ppt"):
+            logging.debug(f"Source of `{formatted_source}` detected as `ppt`.")
+            return DataType.PPT
 
         if source.endswith(".yaml"):
             with open(source, "r") as file:

@@ -131,8 +131,8 @@ class DataFormatter(JSONSerializable):
             DataType.DROPBOX: "embedchain.chunkers.common_chunker.CommonChunker",
             DataType.TEXT_FILE: "embedchain.chunkers.common_chunker.CommonChunker",
             DataType.MYSQL: "embedchain.chunkers.mysql.MySQLChunker",
-            DataType.PPT: "embedchain.chunkers.common_chunker.CommonChunker",
-            DataType.MD: "embedchain.chunkers.common_chunker.CommonChunker",
+            DataType.PPT: "embedchain.chunkers.ppt.PPTChunker",
+            DataType.MD: "embedchain.chunkers.markdown.MarkdownChunker",
         }
 
         if chunker is not None:

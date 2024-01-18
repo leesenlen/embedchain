@@ -32,7 +32,7 @@ embedder:
 vectordb:
   provider: elasticsearch
   config:
-    collection_name: 'sailvan_pdf'
+    collection_name: 'sailvan_md'
     es_url: http://10.199.1.77:9200
     basic_auth:
       - elastic
