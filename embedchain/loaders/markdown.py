@@ -15,7 +15,7 @@ class MarkdownLoader(BaseLoader):
         """Load data from a .md file."""
         output = []
         meta_data = {}
-        content = self.extract_text_from_ppt(url)
+        content = self.extract_text_from_markdown(url)
 
         meta_data["url"] = url
         output.append({"content": content, "meta_data": meta_data})
@@ -27,7 +27,7 @@ class MarkdownLoader(BaseLoader):
             "hash": hash_data
         }
     
-    def extract_text_from_markdown(md_file_path):
+    def extract_text_from_markdown(self, md_file_path):
         with open(md_file_path, 'r', encoding='utf-8') as file:
             md_content = file.read()
 

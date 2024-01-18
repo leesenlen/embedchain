@@ -40,6 +40,7 @@ class BaseChunker(JSONSerializable):
             content = data["content"]
 
             meta_data = data["meta_data"]
+            url = meta_data["url"]
             # add data type to meta data to allow query using data type
             meta_data["app_id"] = app_id
             meta_data["doc_id"] = doc_id
@@ -48,12 +49,10 @@ class BaseChunker(JSONSerializable):
             meta_data["data_type"] = self.data_type.value
             
             meta_data["link"] = link
-            meta_data["subject"] = subject
+            meta_data["subject"] = subject if subject is not None else url
             meta_data["labels"] = labels
             meta_data["is_public"] = is_public
-
-            url = meta_data["url"]
-                   
+    
             chunks = self.get_chunks(content)
             for chunk in chunks:
                 chunk_id = doc_id + "-" + hashlib.sha256((chunk + url).encode()).hexdigest()
@@ -61,7 +60,7 @@ class BaseChunker(JSONSerializable):
                 if idMap.get(chunk_id) is None and len(chunk) >= min_chunk_size:
                     idMap[chunk_id] = True
                     chunk_ids.append(chunk_id)
-                    documents.append(chunk)
+                    documents.append(f"主题：{meta_data['subject']},段落内容：{chunk}")
                     metadatas.append(meta_data)
         return {
             "documents": documents,
