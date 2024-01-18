@@ -602,14 +602,16 @@ class EmbedChain(JSONSerializable):
         self,
         input_query: str,
         and_conditions: Optional[dict[str, any]] = None,
-        or_conditions: Optional[dict[str, any]] = None
+        or_conditions: Optional[dict[str, any]] = None,
+        knn: bool = False
     ) -> Union[list[tuple[str, str, str]], list[str]]:
         
 
         contexts = self.db.multi_field_match_query(
             input_query=input_query,
             and_conditions=and_conditions,
-            or_conditions=or_conditions
+            or_conditions=or_conditions,
+            knn=knn
         )
         return contexts
 
