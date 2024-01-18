@@ -21,7 +21,9 @@ class BaseChunker(JSONSerializable):
         min_chunk_size = config.min_chunk_size if config is not None else 1
         logging.info(f"[INFO] Skipping chunks smaller than {min_chunk_size} characters")
 
-        app_id = metadata.get("app_id",'0') #应用ID
+        if metadata is None:
+            metadata = {}
+        app_id =  metadata.get("app_id",'0') #应用ID
         knowledge_id = metadata.get("knowledge_id",uuid.uuid4()) #知识库ID   
         subject = metadata.get("subject",None) #主题
         doc_id = metadata.get("doc_id",None)

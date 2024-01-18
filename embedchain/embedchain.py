@@ -612,12 +612,6 @@ class EmbedChain(JSONSerializable):
             or_conditions=or_conditions
         )
         return contexts
-    
-    def knn_search(
-        self,
-        input_query: str
-    ):
-        return self.db.knn_search(input_query)
 
     def query(
         self,

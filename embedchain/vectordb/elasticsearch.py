@@ -261,66 +261,46 @@ class ElasticsearchDB(BaseVectorDB):
         self,
         input_query: list[str],
         and_conditions: dict[str, any],
-        or_conditions: dict[str, any]
+        or_conditions: dict[str, any],
+        knn: bool = False
     ) -> Union[list[tuple[str, dict]], list[str]]:
 
         input_query_vector = self.embedder.embedding_fn(input_query)
         query_vector = input_query_vector[0]
 
-        query = {
-            "script_score": {
+        if knn:
+            query = {
                 "query": {"bool": {"must": [{"exists": {"field": "text"}}]}},
-                "script": {
-                    "source": "cosineSimilarity(params.input_query_vector, 'embeddings') + 1.0",
-                    "params": {"input_query_vector": query_vector},
+                "knn": {
+                "field": "embeddings",
+                "query_vector": query_vector,
+                "k": 10,
+                "num_candidates": 100,
+                "boost": 1
                 },
+                "size": 5
             }
-        }
-        if and_conditions is not None:
-            query["script_score"]["query"] = {"bool": {"must": [{"match": {field: value} for field, value in and_conditions.items()}]}}
-        if or_conditions is not None:
-            query["script_score"]["query"] = {"bool": {"should": [{"match": {field: value} for field, value in or_conditions.items()}]}}
+            if and_conditions is not None:
+                query["query"] = {"bool": {"must": [{"match": {field: value} for field, value in and_conditions.items()}]}}
+            if or_conditions is not None:
+                query["query"] = {"bool": {"should": [{"match": {field: value} for field, value in or_conditions.items()}]}}
+        else:
+            query = {
+                "script_score": {
+                    "query": {"bool": {"must": [{"exists": {"field": "text"}}]}},
+                    "script": {
+                        "source": "cosineSimilarity(params.input_query_vector, 'embeddings') + 1.0",
+                        "params": {"input_query_vector": query_vector},
+                    },
+                }
+            }
+            if and_conditions is not None:
+                query["script_score"]["query"] = {"bool": {"must": [{"match": {field: value} for field, value in and_conditions.items()}]}}
+            if or_conditions is not None:
+                query["script_score"]["query"] = {"bool": {"should": [{"match": {field: value} for field, value in or_conditions.items()}]}}
         
         _source = ["text", "metadata"]
         response = self.client.search(index=self._get_index(), query=query, _source=_source, size=5)
-        docs = response["hits"]["hits"]
-        contexts = []
-        for doc in docs:
-            context = doc["_source"]["text"]
-            # if citations:
-            #     metadata = doc["_source"]["metadata"]
-            #     metadata["score"] = doc["_score"]
-            #     contexts.append(tuple((context, metadata)))
-            # else:
-            contexts.append(context)
-        return contexts
-
-    def knn_search(
-        self,
-        input_query: list[str]):
-        input_query_vector = self.embedder.embedding_fn(input_query)
-        query_vector = input_query_vector[0]
-        # query = {
-        #     "knn": {
-        #         "field": "embeddings",
-        #         "query_vector": query_vector,
-        #         "k": 5,
-        #         "num_candidates": 50,
-        #         "filter": {
-        #         "term": {
-        #             "file-type": "png"
-        #         }
-        #         }
-        #     }
-
-        # }
-        knn = {
-            "field": "embeddings",
-            "query_vector": query_vector,
-            "k": 10,
-            "num_candidates": 100,
-        }
-        response = self.client.knn_search(index=self._get_index(), knn=knn)
         docs = response["hits"]["hits"]
         contexts = []
         for doc in docs:
