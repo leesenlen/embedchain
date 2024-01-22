@@ -232,9 +232,13 @@ def detect_datatype(source: Any) -> DataType:
             logging.debug(f"Source of `{formatted_source}` detected as `md`.")
             return DataType.MD
 
-        if url.path.endswith(".docx") or url.path.endswith(".doc"):
+        if url.path.endswith(".docx"):
             logging.debug(f"Source of `{formatted_source}` detected as `docx`.")
             return DataType.DOCX
+        
+        if url.path.endswith(".doc"):
+            logging.debug(f"Source of `{formatted_source}` detected as `doc`.")
+            return DataType.DOC
         
         if url.path.endswith(".pptx") or url.path.endswith(".ppt"):
             logging.debug(f"Source of `{formatted_source}` detected as `ppt`.")
@@ -304,9 +308,13 @@ def detect_datatype(source: Any) -> DataType:
         # For datatypes that support conventional file references.
         # Note: checking for string is not necessary anymore.
 
-        if source.endswith(".docx") or source.endswith(".doc"):
+        if source.endswith(".docx"):
             logging.debug(f"Source of `{formatted_source}` detected as `docx`.")
             return DataType.DOCX
+        
+        if url.path.endswith(".doc"):
+            logging.debug(f"Source of `{formatted_source}` detected as `doc`.")
+            return DataType.DOC
 
         if source.endswith(".csv"):
             logging.debug(f"Source of `{formatted_source}` detected as `csv`.")

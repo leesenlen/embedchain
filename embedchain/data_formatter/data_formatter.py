@@ -83,6 +83,7 @@ class DataFormatter(JSONSerializable):
             DataType.MYSQL: "embedchain.loaders.mysql.MySQLLoader",
             DataType.PPT : "embedchain.loaders.ppt.PPTLoader",
             DataType.MD : "embedchain.loaders.markdown.MarkdownLoader",
+            DataType.DOC: "embedchain.loaders.doc_file.DocFileLoader",
         }
 
         if data_type == DataType.CUSTOM or loader is not None:
@@ -133,6 +134,7 @@ class DataFormatter(JSONSerializable):
             DataType.MYSQL: "embedchain.chunkers.mysql.MySQLChunker",
             DataType.PPT: "embedchain.chunkers.ppt.PPTChunker",
             DataType.MD: "embedchain.chunkers.markdown.MarkdownChunker",
+            DataType.DOC: "embedchain.chunkers.doc_file.DocFileChunker",
         }
 
         if chunker is not None:

@@ -43,6 +43,7 @@ class IndirectDataType(Enum):
     MYSQL = "mysql"
     PPT = "ppt"
     MD = "md"
+    DOC = "doc"
 
 
 class SpecialDataType(Enum):
@@ -85,3 +86,4 @@ class DataType(Enum):
     MYSQL = IndirectDataType.MYSQL.value
     PPT = IndirectDataType.PPT.value
     MD = IndirectDataType.MD.value
+    DOC = IndirectDataType.DOC.value
