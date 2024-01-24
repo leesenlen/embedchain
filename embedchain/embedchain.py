@@ -603,6 +603,7 @@ class EmbedChain(JSONSerializable):
         input_query: str,
         and_conditions: Optional[dict[str, any]] = None,
         or_conditions: Optional[dict[str, any]] = None,
+        size: int = 5,
         knn: bool = False
     ) -> Union[list[tuple[str, str, str]], list[str]]:
         
@@ -611,6 +612,7 @@ class EmbedChain(JSONSerializable):
             input_query=input_query,
             and_conditions=and_conditions,
             or_conditions=or_conditions,
+            size = size,
             knn=knn
         )
         return contexts

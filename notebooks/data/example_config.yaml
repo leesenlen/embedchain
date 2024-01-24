@@ -6,8 +6,8 @@ app:
 llm:
   provider: azure_openai
   config:
-    model: gpt-35-turbo-0613
-    deployment_name: gpt-35-turbo-0613
+    model: gpt-4-1106-preview 
+    deployment_name: gpt-4-1106-preview 
     temperature: 0.5
     max_tokens: 1000
     top_p: 1
@@ -32,7 +32,7 @@ embedder:
 vectordb:
   provider: elasticsearch
   config:
-    collection_name: 'sailvan_ppt'
+    collection_name: 'sailvan_vector_db'
     es_url: http://10.199.1.77:9200
     basic_auth:
       - elastic

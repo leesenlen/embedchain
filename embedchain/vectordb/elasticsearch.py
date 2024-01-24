@@ -262,28 +262,29 @@ class ElasticsearchDB(BaseVectorDB):
         input_query: list[str],
         and_conditions: dict[str, any],
         or_conditions: dict[str, any],
+        size: int = 5,
         knn: bool = False
     ) -> Union[list[tuple[str, dict]], list[str]]:
 
         input_query_vector = self.embedder.embedding_fn(input_query)
         query_vector = input_query_vector[0]
 
+        _source = ["text", "metadata"]
         if knn:
             query = {
                 "query": {"bool": {"must": [{"exists": {"field": "text"}}]}},
                 "knn": {
                 "field": "embeddings",
                 "query_vector": query_vector,
-                "k": 10,
-                "num_candidates": 100,
-                "boost": 1
-                },
-                "size": 5
+                "k": 5,
+                "num_candidates": 10
+                }
             }
             if and_conditions is not None:
                 query["query"] = {"bool": {"must": [{"match": {field: value} for field, value in and_conditions.items()}]}}
             if or_conditions is not None:
                 query["query"] = {"bool": {"should": [{"match": {field: value} for field, value in or_conditions.items()}]}}
+            response = self.client.search(index=self._get_index(), body=query, _source=_source, size=size)
         else:
             query = {
                 "script_score": {
@@ -299,12 +300,13 @@ class ElasticsearchDB(BaseVectorDB):
             if or_conditions is not None:
                 query["script_score"]["query"] = {"bool": {"should": [{"match": {field: value} for field, value in or_conditions.items()}]}}
         
-        _source = ["text", "metadata"]
-        response = self.client.search(index=self._get_index(), query=query, _source=_source, size=5)
+            response = self.client.search(index=self._get_index(), query=query, _source=_source, size=size)
         docs = response["hits"]["hits"]
         contexts = []
         for doc in docs:
             context = doc["_source"]["text"]
+            print(context, doc["_score"])
+            print("------------------")
             # if citations:
             #     metadata = doc["_source"]["metadata"]
             #     metadata["score"] = doc["_score"]
