@@ -1,7 +1,6 @@
 import hashlib
 import logging
 from typing import Optional,Any
-import uuid
 
 from embedchain.config.add_config import ChunkerConfig
 from embedchain.helpers.json_serializable import JSONSerializable
@@ -15,6 +14,7 @@ class BaseChunker(JSONSerializable):
         self.data_type = None
 
     def chunks(self, loader, src, metadata: Optional[dict[str, Any]] = None,config: Optional[ChunkerConfig] = None):
+        
         documents = []
         chunk_ids = []
         idMap = {}
@@ -23,18 +23,15 @@ class BaseChunker(JSONSerializable):
 
         if metadata is None:
             metadata = {}
-        app_id =  metadata.get("app_id",'0') #应用ID
-        knowledge_id = metadata.get("knowledge_id",uuid.uuid4()) #知识库ID   
+        app_id =  metadata.get("app_id",0) #应用ID
+        knowledge_id = metadata.get("knowledge_id",0) #知识库ID   
         subject = metadata.get("subject",None) #主题
-        doc_id = metadata.get("doc_id",None)
 
         data_result = loader.load_data(src)
         data_records = data_result["data"]
         hash_data = data_result["doc_id"]
-        if doc_id is None:
-            doc_id = str(app_id) + "-" + data_result["doc_id"]
-        else:
-            doc_id = str(app_id) + "-" + str(doc_id)
+        doc_id = str(app_id) + "-" + data_result["doc_id"]
+        
         hash_file = data_result["hash"]
 
         metadatas = []

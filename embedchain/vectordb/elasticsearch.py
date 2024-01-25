@@ -316,10 +316,8 @@ class ElasticsearchDB(BaseVectorDB):
                         query["script_score"]["query"]["bool"].setdefault("should", []).append({"terms": {field: value}})
                     else:
                         query["script_score"]["query"]["bool"].setdefault("should", []).append({"match": {field: value}})
-            # print(query)
-            # print(self._get_index())
+
             response = self.client.search(index=self._get_index(), query=query, _source=_source, size=size)
-        
         
         docs = response["hits"]["hits"]
         contexts = []

@@ -1,9 +1,11 @@
 import hashlib
 import logging
 from typing import Any, Optional
+import json
 
 from embedchain.loaders.base_loader import BaseLoader
 from embedchain.utils.misc import clean_string
+from embedchain.models.base import BaseModel
 
 
 class MySQLLoader(BaseLoader):
@@ -40,19 +42,9 @@ class MySQLLoader(BaseLoader):
             )
 
 
-    def load_data(self, schema: dict):
-        database = None
-        if "database" in schema:
-            database = schema["database"]
-        else:
-            raise ValueError("database is not provided in the source.")
-        table_name = None
-        if "table_name" in schema:
-            table_name = schema["table_name"]
-        else:
-            raise ValueError("table_name is not provided in the source.")
+    def load_data(self, table: BaseModel):
         
-        return self.fetch_all_id_range(database,table_name,schema)
+        return self.fetch_all_id_range(table)
   
         
 
@@ -84,40 +76,36 @@ class MySQLLoader(BaseLoader):
     #     self.cursor.close()
     #     self.connection.close()
 
-    def fetch_all_id_range(self, database, table_name, schema, id_range=1000):
+    def fetch_all_id_range(self, table: BaseModel, id_range=1000):
         """
-        默认以id进行分块导入
-        :param database: 数据库名
-        :param table_name: 表名
-        :param page_size: 每页数据量
-        :return:
+        默认以primary_key进行分块导入
         """
         columns_string = '*'
-        column_info = []
-        if "columns" in schema and schema['columns'] is not None:
-            for column,value in schema['columns'].items():
+        
+        if table.table_schema is not None:
+            column_info = []
+            for column,value in table.table_schema.items():
                 column_info.append(column)
             columns_string = ','.join(column_info)
    
-        query = f"SELECT id FROM {database}.{table_name} order by id desc LIMIT 1"
+        query = f"SELECT {table.primary_key} FROM {table.database}.{table.table_name} order by {table.primary_key} desc LIMIT 1"
         self.cursor.execute(query)
         result = self.cursor.fetchone()
 
         # 获取最大 ID
-        max_id = result['id'] if result else 0
+        max_id = result[table.primary_key] if result else 0
         data = []
         start_id = 1
         end_id = start_id + id_range -1
         while start_id <= max_id:
-            query = f"SELECT {columns_string} FROM {database}.{table_name} where id between {start_id} and {end_id}"
+            query = f"SELECT {columns_string} FROM {table.database}.{table.table_name} where {table.primary_key} between {start_id} and {end_id}"
             self.cursor.execute(query)
             result = self.cursor.fetchall()
 
             if result:
                 for row in result:
-                    primary_key,content = self.parse_row(row,schema)
-                    doc_content = clean_string(str(content))
-                    data.append({"primary_key": primary_key,"content": doc_content, "meta_data": {"url": query,"fields":row}})
+                    doc_content = clean_string(self.parse_row(row,table))
+                    data.append({"primary_key": row[table.primary_key],"content": doc_content, "meta_data": {"url": query,"fields":row}})
         
             start_id = end_id + 1
             end_id = start_id + id_range -1
@@ -128,26 +116,23 @@ class MySQLLoader(BaseLoader):
         
         
 
-    def parse_row(self,row:dict,schema:dict):
-        primary_key = row['id']
-        if "primary_key" in schema and schema['primary_key'] is not None:
-            split = schema['primary_key'].split(",")
-            value = []
-            for key in split:
-                value.append(str(row[key]))
-            primary_key = '_'.join(value)
-
+    def parse_row(self,row:dict,table: BaseModel):        
         content = {}
-        if "columns" in schema and schema['columns'] is not None:
-            for column,value in schema['columns'].items():
-                if value is not None and "is_writable" in value and value['is_writable'] is False:
+        if table.table_schema is not None:
+            for column,value in table.table_schema.items():
+                if table.ignore_fields is not None and column in table.ignore_fields:
                     continue
-                if value is not None and "description" in value:
-                    content[value['description']] = row[column]
+                if value is not None and "field_name" in value:
+                    content[value['field_name']] = row[column]
         else:
             content = row
-            
-        return primary_key,content
+        match table.format_type:
+            case "json":
+                return str(content)
+            case "concat":
+                return ",".join([f"{key}:{value}" for key, value in content.items()])
+            case _:
+                raise ValueError(f"Invalid format type: {table.format_type}")   
 
 
 
