@@ -282,11 +282,17 @@ class ElasticsearchDB(BaseVectorDB):
             }
             if and_conditions is not None:
                 for field, value in and_conditions.items():
-                    query["query"]["bool"].setdefault("must", []).append({"match": {field: value}})
+                    if isinstance(value, list):
+                        query["query"]["bool"].setdefault("must", []).append({"terms": {field: value}})
+                    else:
+                        query["query"]["bool"].setdefault("must", []).append({"match": {field: value}})
 
             if or_conditions is not None:
                 for field, value in or_conditions.items():
-                    query["query"]["bool"].setdefault("should", []).append({"match": {field: value}})
+                    if isinstance(value, list):
+                        query["query"]["bool"].setdefault("should", []).append({"terms": {field: value}})
+                    else:
+                        query["query"]["bool"].setdefault("should", []).append({"match": {field: value}})
             response = self.client.search(index=self._get_index(), body=query, _source=_source, size=size)
         else:
             query = {
@@ -300,12 +306,20 @@ class ElasticsearchDB(BaseVectorDB):
             }
             if and_conditions is not None:
                 for field, value in and_conditions.items():
-                    query["script_score"]["query"]["bool"].setdefault("must", []).append({"match": {field: value}})
+                    if isinstance(value, list):
+                        query["script_score"]["query"]["bool"].setdefault("must", []).append({"terms": {field: value}})
+                    else:
+                        query["script_score"]["query"]["bool"].setdefault("must", []).append({"match": {field: value}})
             if or_conditions is not None:
                 for field, value in or_conditions.items():
-                    query["script_score"]["query"]["bool"].setdefault("should", []).append({"match": {field: value}})
-        
+                    if isinstance(value, list):
+                        query["script_score"]["query"]["bool"].setdefault("should", []).append({"terms": {field: value}})
+                    else:
+                        query["script_score"]["query"]["bool"].setdefault("should", []).append({"match": {field: value}})
+            # print(query)
+            # print(self._get_index())
             response = self.client.search(index=self._get_index(), query=query, _source=_source, size=size)
+        
         
         docs = response["hits"]["hits"]
         contexts = []
