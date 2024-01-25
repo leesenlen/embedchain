@@ -172,7 +172,13 @@ class EmbedChain(JSONSerializable):
         """
         发布知识库
         """
-        self.db.publish_knowledge({"metadata.knowledge_id": knowledge_id})    
+        self.db.publish_knowledge({"metadata.knowledge_id": knowledge_id})
+
+    def enable_docs(self, doc_ids: list, status: int=1):
+        """
+        关闭/开启文档
+        """
+        self.db.enable_docs(doc_ids,status)    
 
     def upsert(
         self,
@@ -226,7 +232,7 @@ class EmbedChain(JSONSerializable):
             metadatas=metadatas,
             ids=ids,
         )
-        return embeddings_data["hash_file"]
+        return embeddings_data["doc_id"]
         
 
     def add(

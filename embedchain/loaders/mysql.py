@@ -1,7 +1,5 @@
-import hashlib
 import logging
 from typing import Any, Optional
-import json
 
 from embedchain.loaders.base_loader import BaseLoader
 from embedchain.utils.misc import clean_string

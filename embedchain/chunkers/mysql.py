@@ -53,7 +53,7 @@ class MySQLChunker(BaseChunker):
             "documents": documents,
             "ids": chunk_ids,
             "metadatas": metadatas,
-            "hash_file": hash_data
+            "doc_id": doc_id
         }
 
     

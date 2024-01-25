@@ -216,7 +216,41 @@ class ElasticsearchDB(BaseVectorDB):
                 "lang": "painless"
             }
         }
+        self.client.update_by_query(index=self._get_index(), body=query)
 
+    def publish_knowledge(self, conditions: dict):
+        query = {
+            "query": {
+                "bool": {
+                    "must": [{"match": {key: value}} for key, value in conditions.items()]
+                }
+            },
+            "script": {
+                "source": """
+                    if (ctx._source.containsKey('is_public')) {
+                        ctx._source.is_public = 1;
+                    }
+                """,
+                "lang": "painless"
+            }
+        }
+        self.client.update_by_query(index=self._get_index(), body=query)
+
+    def enable_docs(self, doc_ids: list,status: int=1):
+        query = {
+            "query": {
+                "terms": {
+                    "metadata.doc_id": doc_ids
+                }
+            },
+            "script": {
+                "source": "ctx._source.metadata.status = params.status",
+                "lang": "painless",
+                "params": {
+                    "status": status
+                }
+            }
+        }
         self.client.update_by_query(index=self._get_index(), body=query)
 
     def delete(

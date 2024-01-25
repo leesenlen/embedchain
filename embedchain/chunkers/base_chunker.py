@@ -63,7 +63,7 @@ class BaseChunker(JSONSerializable):
             "documents": documents,
             "ids": chunk_ids,
             "metadatas": metadatas,
-            "hash_file": hash_file
+            "doc_id": doc_id
         }
     
     def create_chunks(self, loader, src, app_id=None, config: Optional[ChunkerConfig] = None):
