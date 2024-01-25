@@ -281,9 +281,12 @@ class ElasticsearchDB(BaseVectorDB):
                 }
             }
             if and_conditions is not None:
-                query["query"] = {"bool": {"must": [{"match": {field: value} for field, value in and_conditions.items()}]}}
+                for field, value in and_conditions.items():
+                    query["query"]["bool"].setdefault("must", []).append({"match": {field: value}})
+
             if or_conditions is not None:
-                query["query"] = {"bool": {"should": [{"match": {field: value} for field, value in or_conditions.items()}]}}
+                for field, value in or_conditions.items():
+                    query["query"]["bool"].setdefault("should", []).append({"match": {field: value}})
             response = self.client.search(index=self._get_index(), body=query, _source=_source, size=size)
         else:
             query = {
@@ -296,11 +299,14 @@ class ElasticsearchDB(BaseVectorDB):
                 }
             }
             if and_conditions is not None:
-                query["script_score"]["query"] = {"bool": {"must": [{"match": {field: value} for field, value in and_conditions.items()}]}}
+                for field, value in and_conditions.items():
+                    query["script_score"]["query"]["bool"].setdefault("must", []).append({"match": {field: value}})
             if or_conditions is not None:
-                query["script_score"]["query"] = {"bool": {"should": [{"match": {field: value} for field, value in or_conditions.items()}]}}
+                for field, value in or_conditions.items():
+                    query["script_score"]["query"]["bool"].setdefault("should", []).append({"match": {field: value}})
         
             response = self.client.search(index=self._get_index(), query=query, _source=_source, size=size)
+        
         docs = response["hits"]["hits"]
         contexts = []
         for doc in docs:
