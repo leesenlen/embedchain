@@ -21,18 +21,19 @@ class PdfFileLoader(BaseLoader):
         pages = loader.load_and_split()
         if not len(pages):
             raise ValueError("No data found")
+        meta_data = {}
+        meta_data["url"] = url
         for page in pages:
             content = page.page_content
             content = clean_string(content)
-            meta_data = {}
-            meta_data["url"] = url
-            data.append(
+            all_content.append(content)
+            
+        data.append(
                 {
-                    "content": content,
+                    "content": all_content,
                     "meta_data": meta_data,
                 }
             )
-            all_content.append(content)
         doc_id = hashlib.sha256((" ".join(all_content)).encode()).hexdigest()
         return {
             "doc_id": doc_id,

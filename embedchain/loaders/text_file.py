@@ -3,6 +3,7 @@ import os
 
 from embedchain.helpers.json_serializable import register_deserializable
 from embedchain.loaders.base_loader import BaseLoader
+from embedchain.utils.misc import clean_string
 
 
 @register_deserializable
@@ -13,7 +14,7 @@ class TextFileLoader(BaseLoader):
             raise FileNotFoundError(f"The file at {url} does not exist.")
 
         with open(url, "r", encoding="utf-8") as file:
-            content = file.read()
+            content = clean_string(file.read())
 
         doc_id = hashlib.sha256((content).encode()).hexdigest()
 

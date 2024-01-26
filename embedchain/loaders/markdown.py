@@ -8,6 +8,7 @@ except ImportError:
     ) from None
 from embedchain.helpers.json_serializable import register_deserializable
 from embedchain.loaders.base_loader import BaseLoader
+from embedchain.utils.misc import clean_string
 
 @register_deserializable
 class MarkdownLoader(BaseLoader):
@@ -15,7 +16,7 @@ class MarkdownLoader(BaseLoader):
         """Load data from a .md file."""
         output = []
         meta_data = {}
-        content = self.extract_text_from_markdown(url)
+        content = clean_string(self.extract_text_from_markdown(url))
 
         meta_data["url"] = url
         output.append({"content": content, "meta_data": meta_data})
