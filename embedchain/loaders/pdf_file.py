@@ -24,7 +24,7 @@ class PdfFileLoader(BaseLoader):
         for page in pages:
             content = page.page_content
             content = clean_string(content)
-            meta_data = page.metadata
+            meta_data = {}
             meta_data["url"] = url
             data.append(
                 {
@@ -33,10 +33,8 @@ class PdfFileLoader(BaseLoader):
                 }
             )
             all_content.append(content)
-        doc_id = hashlib.sha256((" ".join(all_content) + url).encode()).hexdigest()
-        hash_data = hashlib.sha256((" ".join(all_content)).encode()).hexdigest()
+        doc_id = hashlib.sha256((" ".join(all_content)).encode()).hexdigest()
         return {
             "doc_id": doc_id,
-            "data": data,
-            "hash":hash_data
+            "data": data
         }

@@ -15,10 +15,9 @@ class TextFileLoader(BaseLoader):
         with open(url, "r", encoding="utf-8") as file:
             content = file.read()
 
-        doc_id = hashlib.sha256((content + url).encode()).hexdigest()
-        hash_data = hashlib.sha256((content).encode()).hexdigest()
+        doc_id = hashlib.sha256((content).encode()).hexdigest()
 
-        meta_data = {"url": url, "file_size": os.path.getsize(url), "file_type": url.split(".")[-1]}
+        meta_data = {"url": url}
 
         return {
             "doc_id": doc_id,
@@ -27,6 +26,5 @@ class TextFileLoader(BaseLoader):
                     "content": content,
                     "meta_data": meta_data,
                 }
-            ],
-            "hash": hash_data
+            ]
         }

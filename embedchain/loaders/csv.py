@@ -44,7 +44,6 @@ class CsvLoader(BaseLoader):
             for i, row in enumerate(reader):
                 line = ", ".join([f"{field}: {value}" for field, value in row.items()])
                 lines.append(line)
-                result.append({"content": line, "meta_data": {"url": content, "row": i + 1}})
-        doc_id = hashlib.sha256((content + " ".join(lines)).encode()).hexdigest()
-        hash_data = hashlib.sha256((" ".join(lines)).encode()).hexdigest()
-        return {"doc_id": doc_id, "data": result, "hash":hash_data}
+                result.append({"content": line, "meta_data": {"url": content}})
+        doc_id = hashlib.sha256((" ".join(lines)).encode()).hexdigest()
+        return {"doc_id": doc_id, "data": result}

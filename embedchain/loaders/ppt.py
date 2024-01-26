@@ -19,12 +19,10 @@ class PPTLoader(BaseLoader):
 
         meta_data["url"] = url
         output.append({"content": content, "meta_data": meta_data})
-        doc_id = hashlib.sha256((content + url).encode()).hexdigest()
-        hash_data = hashlib.sha256((content).encode()).hexdigest()
+        doc_id = hashlib.sha256((content).encode()).hexdigest()
         return {
             "doc_id": doc_id,
-            "data": output,
-            "hash": hash_data
+            "data": output
         }
     
     def extract_text_from_ppt(self, ppt_file_path):

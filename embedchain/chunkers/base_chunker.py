@@ -31,8 +31,6 @@ class BaseChunker(JSONSerializable):
         data_records = data_result["data"]
         hash_data = data_result["doc_id"]
         doc_id = str(app_id) + "-" + data_result["doc_id"]
-        
-        hash_file = data_result["hash"]
 
         metadatas = []
         for data in data_records:
@@ -49,10 +47,9 @@ class BaseChunker(JSONSerializable):
 
             meta_data["subject"] = subject if subject is not None else url
 
-    
             chunks = self.get_chunks(content)
             for chunk in chunks:
-                chunk_id = str(doc_id) + "-" + hashlib.sha256((chunk + url).encode()).hexdigest()
+                chunk_id = str(doc_id) + "-" + hashlib.sha256((chunk).encode()).hexdigest()
      
                 if idMap.get(chunk_id) is None and len(chunk) >= min_chunk_size:
                     idMap[chunk_id] = True

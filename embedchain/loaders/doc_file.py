@@ -23,16 +23,14 @@ class DocFileLoader(BaseLoader):
         output = []
         data = loader.load()
         content = data[0].page_content
-        meta_data = data[0].metadata
+        meta_data = {}
         meta_data["url"] = url
         output.append({"content": content, "meta_data": meta_data})
-        doc_id = hashlib.sha256((content + url).encode()).hexdigest()
-        hash_data = hashlib.sha256((content).encode()).hexdigest()
+        doc_id = hashlib.sha256((content).encode()).hexdigest()
         os.remove(tmp_file)
         return {
             "doc_id": doc_id,
-            "data": output,
-            "hash": hash_data
+            "data": output
         }
     
 

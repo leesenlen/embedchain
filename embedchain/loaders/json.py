@@ -87,6 +87,5 @@ class JSONLoader(BaseLoader):
             data.append({"content": doc_content, "meta_data": {"url": content_url_str}})
             data_content.append(doc_content)
 
-        doc_id = hashlib.sha256((content_url_str + ", ".join(data_content)).encode()).hexdigest()
-        hash_data = hashlib.sha256((", ".join(data_content)).encode()).hexdigest()
-        return {"doc_id": doc_id, "data": data,"hash":hash_data}
+        doc_id = hashlib.sha256((", ".join(data_content)).encode()).hexdigest()
+        return {"doc_id": doc_id, "data": data}
