@@ -24,7 +24,7 @@ class MySQLChunker(BaseChunker):
 
         if metadata is None:
             metadata = {}
-        app_id =  metadata.get("app_id",0) #应用ID
+        app_id =  metadata.get("app_id",1) #应用ID
         knowledge_id = metadata.get("knowledge_id",0) #知识库ID   
         subject = metadata.get("subject",table.description) #主题
 
@@ -44,6 +44,7 @@ class MySQLChunker(BaseChunker):
             meta_data["data_type"] = self.data_type.value
 
             meta_data["subject"] = subject
+            meta_data["status"] = 1
 
             chunk_ids.append(doc_id+'-'+str(data['primary_key']))
             documents.append(f"主题：{meta_data['subject']},段落内容：{content}")

@@ -23,7 +23,7 @@ class BaseChunker(JSONSerializable):
 
         if metadata is None:
             metadata = {}
-        app_id =  metadata.get("app_id",0) #应用ID
+        app_id =  metadata.get("app_id",1) #应用ID
         knowledge_id = metadata.get("knowledge_id",0) #知识库ID   
         subject = metadata.get("subject",None) #主题
 
@@ -46,6 +46,7 @@ class BaseChunker(JSONSerializable):
             meta_data["data_type"] = self.data_type.value
 
             meta_data["subject"] = subject if subject is not None else url
+            meta_data["status"] = 1
 
             chunks = self.get_chunks(content)
             for chunk in chunks:

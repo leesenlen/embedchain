@@ -27,14 +27,15 @@ class PdfFileLoader(BaseLoader):
             content = page.page_content
             content = clean_string(content)
             all_content.append(content)
-            
+
+        text = "".join(all_content)    
         data.append(
                 {
-                    "content": all_content,
+                    "content": text,
                     "meta_data": meta_data,
                 }
             )
-        doc_id = hashlib.sha256((" ".join(all_content)).encode()).hexdigest()
+        doc_id = hashlib.sha256((text).encode()).hexdigest()
         return {
             "doc_id": doc_id,
             "data": data
