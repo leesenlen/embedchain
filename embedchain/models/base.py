@@ -18,6 +18,12 @@ class BaseModel:
 			"field_name": "用户姓名",
 			"field_type": "string",
 			"description": "公司用户的真实姓名，重名的情况下会加后缀"
+		},
+        "status": {
+			"field_name": "用户状态",
+			"field_type": "string",
+			"description": "",
+            "enum_translate":"0:离职,1:在职"
 		}
 	},
 	"format_type": "json /  concat",

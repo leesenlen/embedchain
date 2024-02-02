@@ -118,8 +118,10 @@ class MySQLLoader(BaseLoader):
         content = {}
         if table.table_schema is not None:
             for column,value in table.table_schema.items():
-                if table.ignore_fields is not None and column in table.ignore_fields:
-                    continue
+                if table.ignore_fields is not None:
+                    split = table.ignore_fields.split(',')
+                    if column in split:
+                        continue
                 if value is not None and "field_name" in value:
                     content[value['field_name']] = row[column]
         else:
