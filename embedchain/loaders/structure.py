@@ -32,9 +32,9 @@ class StructureLoader(BaseLoader):
                 if value is not None and "field_name" in value:
                     if "enum_translate" in value:
                         enum_translate = self.convert_to_dict(value['enum_translate'])
-                        content[value['field_name']] = enum_translate[row[column]]
+                        content[value['field_name']] = enum_translate[str(row[column])]
                     else:
-                        content[value['field_name']] = row[column]
+                        content[value['field_name']] = str(row[column])
         else:
             content = row
         
