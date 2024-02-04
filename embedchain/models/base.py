@@ -31,7 +31,7 @@ class BaseModel:
     }   
     """
 
-    ALLOWED_SCHEMA_FIELDS = {'field_name', 'field_type', 'description'}
+    ALLOWED_SCHEMA_FIELDS = {'field_name', 'field_type', 'description', 'enum_translate'}
     def __init__(
         self, database: str, 
         table_name: str, 
