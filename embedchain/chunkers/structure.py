@@ -29,7 +29,7 @@ class StructureChunker(BaseChunker):
         knowledge_id = metadata.get("knowledge_id",0) #知识库ID   
         subject = metadata.get("subject",table.description) #主题
 
-        data_records = loader.load_data(table)
+        data_records = loader.load_data(data)
         hash_data = hashlib.sha256((table.database + '.' + table.table_name).encode()).hexdigest()
         doc_id = str(app_id) + "-" + hash_data
 

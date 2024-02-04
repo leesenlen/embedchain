@@ -44,7 +44,7 @@ class IndirectDataType(Enum):
     PPT = "ppt"
     MD = "md"
     DOC = "doc"
-    STRUCTURE = "structure"
+
 
 
 class SpecialDataType(Enum):
@@ -53,6 +53,7 @@ class SpecialDataType(Enum):
     """
 
     QNA_PAIR = "qna_pair"
+    STRUCTURE = "structure"
 
 
 class DataType(Enum):
@@ -88,4 +89,4 @@ class DataType(Enum):
     PPT = IndirectDataType.PPT.value
     MD = IndirectDataType.MD.value
     DOC = IndirectDataType.DOC.value
-    STRUCTURE = IndirectDataType.STRUCTURE.value
+    STRUCTURE = SpecialDataType.STRUCTURE.value
