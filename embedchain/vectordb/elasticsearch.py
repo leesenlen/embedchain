@@ -305,6 +305,7 @@ class ElasticsearchDB(BaseVectorDB):
         _source = ["text", "metadata"]
 
         query = {
+            "min_score": 1,
             "query": {"bool": {"should": [{"match": {"text": input_query}}]}},
             "knn": {
             "field": "embeddings",
