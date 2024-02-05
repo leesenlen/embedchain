@@ -296,69 +296,66 @@ class ElasticsearchDB(BaseVectorDB):
         input_query: list[str],
         and_conditions: dict[str, any],
         or_conditions: dict[str, any],
-        size: int = 5,
-        knn: bool = False
+        size: int = 5
     ) -> Union[list[tuple[str, dict]], list[str]]:
 
         input_query_vector = self.embedder.embedding_fn(input_query)
-        query_vector = input_query_vector[0]
+        query_vector = input_query_vector[0]     
 
         _source = ["text", "metadata"]
-        if knn:
-            query = {
-                "query": {"bool": {"must": [{"exists": {"field": "text"}}]}},
-                "knn": {
-                "field": "embeddings",
-                "query_vector": query_vector,
-                "k": 5,
-                "num_candidates": 10
-                }
-            }
-            if and_conditions is not None:
-                for field, value in and_conditions.items():
-                    if isinstance(value, list):
-                        query["query"]["bool"].setdefault("must", []).append({"terms": {field: value}})
-                    else:
-                        query["query"]["bool"].setdefault("must", []).append({"match": {field: value}})
 
-            if or_conditions is not None:
-                for field, value in or_conditions.items():
-                    if isinstance(value, list):
-                        query["query"]["bool"].setdefault("should", []).append({"terms": {field: value}})
-                    else:
-                        query["query"]["bool"].setdefault("should", []).append({"match": {field: value}})
-            response = self.client.search(index=self._get_index(), body=query, _source=_source, size=size)
-        else:
-            query = {
-                "script_score": {
-                    "query": {"bool": {"must": [{"exists": {"field": "text"}}]}},
-                    "script": {
-                        "source": "cosineSimilarity(params.input_query_vector, 'embeddings') + 1.0",
-                        "params": {"input_query_vector": query_vector},
-                    },
-                }
+        query = {
+            "query": {"bool": {"should": [{"match": {"text": input_query}}]}},
+            "knn": {
+            "field": "embeddings",
+            "query_vector": query_vector,
+            "k": 5,
+            "num_candidates": 20
             }
-            if and_conditions is not None:
-                for field, value in and_conditions.items():
-                    if isinstance(value, list):
-                        query["script_score"]["query"]["bool"].setdefault("must", []).append({"terms": {field: value}})
-                    else:
-                        query["script_score"]["query"]["bool"].setdefault("must", []).append({"match": {field: value}})
-            if or_conditions is not None:
-                for field, value in or_conditions.items():
-                    if isinstance(value, list):
-                        query["script_score"]["query"]["bool"].setdefault("should", []).append({"terms": {field: value}})
-                    else:
-                        query["script_score"]["query"]["bool"].setdefault("should", []).append({"match": {field: value}})
+        }
+        if and_conditions is not None:
+            for field, value in and_conditions.items():
+                if isinstance(value, list):
+                    query["query"]["bool"].setdefault("must", []).append({"terms": {field: value}})
+                else:
+                    query["query"]["bool"].setdefault("must", []).append({"match": {field: value}})
 
-            response = self.client.search(index=self._get_index(), query=query, _source=_source, size=size)
+        if or_conditions is not None:
+            for field, value in or_conditions.items():
+                if isinstance(value, list):
+                    query["query"]["bool"].setdefault("should", []).append({"terms": {field: value}})
+                else:
+                    query["query"]["bool"].setdefault("should", []).append({"match": {field: value}})
+        response = self.client.search(index=self._get_index(), body=query, _source=_source, size=size)
+        # else:
+        #     query = {
+        #         "script_score": {
+        #             "query": {"bool": {"should": [{"exists": {"field": "text"}}]}},
+        #             "script": {
+        #                 "source": "cosineSimilarity(params.input_query_vector, 'embeddings') + 1.0",
+        #                 "params": {"input_query_vector": query_vector},
+        #             },
+        #         }
+        #     }
+        #     if and_conditions is not None:
+        #         for field, value in and_conditions.items():
+        #             if isinstance(value, list):
+        #                 query["script_score"]["query"]["bool"].setdefault("must", []).append({"terms": {field: value}})
+        #             else:
+        #                 query["script_score"]["query"]["bool"].setdefault("must", []).append({"match": {field: value}})
+        #     if or_conditions is not None:
+        #         for field, value in or_conditions.items():
+        #             if isinstance(value, list):
+        #                 query["script_score"]["query"]["bool"].setdefault("should", []).append({"terms": {field: value}})
+        #             else:
+        #                 query["script_score"]["query"]["bool"].setdefault("should", []).append({"match": {field: value}})
+
+        #     response = self.client.search(index=self._get_index(), query=query, _source=_source, size=size)
         
         docs = response["hits"]["hits"]
         contexts = []
         for doc in docs:
             context = doc["_source"]["text"]
-            print(context, doc["_score"])
-            print("------------------")
             # if citations:
             #     metadata = doc["_source"]["metadata"]
             #     metadata["score"] = doc["_score"]

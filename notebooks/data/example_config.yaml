@@ -40,7 +40,7 @@ vectordb:
     verify_certs: false
 
 chunker:
-  chunk_size: 2000
-  chunk_overlap: 0
+  chunk_size: 200
+  chunk_overlap: 20
   length_function: 'len'
-  min_chunk_size: 1
+  min_chunk_size: 20
