@@ -1,5 +1,6 @@
 import hashlib
 import subprocess
+import os
 
 try:
     from pptx import Presentation
@@ -27,6 +28,7 @@ class PPTLoader(BaseLoader):
         meta_data["url"] = url
         output.append({"content": content, "meta_data": meta_data})
         doc_id = hashlib.sha256((content).encode()).hexdigest()
+        os.remove(tmp_file)
         return {
             "doc_id": doc_id,
             "data": output
