@@ -1,4 +1,5 @@
 import hashlib
+import subprocess
 
 try:
     from pptx import Presentation
@@ -16,7 +17,12 @@ class PPTLoader(BaseLoader):
         """Load data from a .pptx file."""
         output = []
         meta_data = {}
-        content = clean_string(self.extract_text_from_ppt(url))
+        extension = self.file_extension(url)
+        tmp_file = url
+        if extension == "ppt":
+            self.convert_ppt_to_pptx(url)
+            tmp_file = url+"x"
+        content = clean_string(self.extract_text_from_ppt(tmp_file))
 
         meta_data["url"] = url
         output.append({"content": content, "meta_data": meta_data})
@@ -44,3 +50,16 @@ class PPTLoader(BaseLoader):
                 all_text.append("\n")
 
         return "\n".join(all_text)
+    
+    def file_extension(self,filename):
+        if '.' not in filename:
+            return ''
+        return filename.rsplit('.', 1)[1].lower()
+
+    def convert_ppt_to_pptx(self,ppt_file):
+        try:
+            # 调用 unoconv 命令行工具进行转换
+            subprocess.run(['unoconv', '-f', 'pptx', ppt_file], check=True)
+            print("Conversion completed successfully.")
+        except subprocess.CalledProcessError as e:
+            print("Conversion failed:", e)
