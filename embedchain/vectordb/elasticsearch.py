@@ -369,7 +369,7 @@ class ElasticsearchDB(BaseVectorDB):
                 else:
                     query["query"]["bool"].setdefault("should", []).append({"match": {field: value}})
         response = self.client.search(index=self._get_index(), body=query, _source=_source, size=size)
-     
+        
         # query = {
         #     "script_score": {
         #         "query": {"bool": {"should": [{"match": {"text": input_query}}]}},
@@ -398,11 +398,6 @@ class ElasticsearchDB(BaseVectorDB):
         contexts = []
         for doc in docs:
             context = doc["_source"]["text"]
-            # if citations:
-            #     metadata = doc["_source"]["metadata"]
-            #     metadata["score"] = doc["_score"]
-            #     contexts.append(tuple((context, metadata)))
-            # else:
             contexts.append(context)
         return contexts
         
