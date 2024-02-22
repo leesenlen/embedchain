@@ -317,7 +317,7 @@ class ElasticsearchDB(BaseVectorDB):
                     query["query"]["bool"].setdefault("should", []).append({"terms": {field: value}})
                 else:
                     query["query"]["bool"].setdefault("should", []).append({"match": {field: value}})
-        response = self.client.search(index=self._get_index(), body=query, _source=_source, size=20)
+        response = self.client.search(index=self._get_index(), body=query, _source=_source, size=30)
         docs = response["hits"]["hits"]
         ids = []
         for doc in docs:
