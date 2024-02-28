@@ -99,18 +99,27 @@ class ElasticsearchDB(BaseVectorDB):
             query = {"bool": {"must": [{"ids": {"values": ids}}]}}
         else:
             query = {"bool": {"must": []}}
-        if "app_id" in where:
-            app_id = where["app_id"]
-            query["bool"]["must"].append({"term": {"metadata.app_id": app_id}})
 
-        response = self.client.search(index=self._get_index(), query=query, _source=False, size=limit)
+        if where:
+            for key, value in where.items():
+                query["bool"]["must"].append({"term": {f"metadata.{key}.keyword": value}})
+
+        response = self.client.search(index=self._get_index(), query=query, _source=True, size=limit)
         docs = response["hits"]["hits"]
         ids = [doc["_id"] for doc in docs]
-        return {"ids": set(ids)}
+        doc_ids = [doc["_source"]["metadata"]["doc_id"] for doc in docs]
+
+        # Result is modified for compatibility with other vector databases
+        # TODO: Add method in vector database to return result in a standard format
+        result = {"ids": ids, "metadatas": []}
+
+        for doc_id in doc_ids:
+            result["metadatas"].append({"doc_id": doc_id})
+
+        return result
 
     def add(
         self,
-        embeddings: list[list[float]],
         documents: list[str],
         metadatas: list[object],
         ids: list[str],
@@ -118,8 +127,6 @@ class ElasticsearchDB(BaseVectorDB):
     ) -> Any:
         """
         add data in vector database
-        :param embeddings: list of embeddings to add
-        :type embeddings: list[list[str]]
         :param documents: list of texts to add
         :type documents: list[str]
         :param metadatas: list of metadata associated with docs
@@ -154,7 +161,7 @@ class ElasticsearchDB(BaseVectorDB):
 
     def split_list(self, input_list, chunk_size):
         """
-        灏嗗垪琛ㄦ寜鐓ф寚瀹氬ぇ灏忓垏鍒嗕负浜岀淮鏁扮粍
+        将列表按照指定大小切分为二维数组
         """
         return [input_list[i:i + chunk_size] for i in range(0, len(input_list), chunk_size)]
     
@@ -288,7 +295,7 @@ class ElasticsearchDB(BaseVectorDB):
             }
         }
 
-        # 鎵ц鍒犻櫎鎿嶄綔
+        # 执行删除操作
         self.client.delete_by_query(index=self._get_index(), body=query)
             
     def multi_field_match_query(
@@ -382,7 +389,7 @@ class ElasticsearchDB(BaseVectorDB):
         #     "script_score": {
         #         "query": {"ids":{"values":ids}},
         #         "script": {
-        #             "source": "cosineSimilarity(params.input_query_vector, 'embeddings') + 1.0",  ##es涓嶅厑璁稿垎鏁颁负璐熸暟
+        #             "source": "cosineSimilarity(params.input_query_vector, 'embeddings') + 1.0",  ##es不允许分数为负数
         #             "params": {"input_query_vector": query_vector},
         #         },
         #     }
@@ -508,3 +515,11 @@ class ElasticsearchDB(BaseVectorDB):
         # NOTE: The method is preferred to an attribute, because if collection name changes,
         # it's always up-to-date.
         return f"{self.config.collection_name}_{self.embedder.vector_dimension}".lower()
+
+    def delete(self, where):
+        """Delete documents from the database."""
+        query = {"query": {"bool": {"must": []}}}
+        for key, value in where.items():
+            query["query"]["bool"]["must"].append({"term": {f"metadata.{key}.keyword": value}})
+        self.client.delete_by_query(index=self._get_index(), body=query)
+        self.client.indices.refresh(index=self._get_index())

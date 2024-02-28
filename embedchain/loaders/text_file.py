@@ -25,7 +25,7 @@ class TextFileLoader(BaseLoader):
             "data": [
                 {
                     "content": content,
-                    "meta_data": meta_data,
+                    "meta_data": metadata,
                 }
             ]
         }

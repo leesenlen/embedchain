@@ -79,9 +79,6 @@ def clean_string(text):
         cleaned_text (str): The cleaned text after all the cleaning operations
         have been performed.
     """
-    # Replacement of newline characters:
-    text = text.replace("\n", " ")
-
     # Stripping and reducing multiple spaces to single:
     cleaned_text = re.sub(r"\s+", " ", text.strip())
 
@@ -109,11 +106,11 @@ def is_readable(s):
     :param s: string
     :return: True if the string is more than 95% printable.
     """
-    try:
-        printable_ratio = sum(c in string.printable for c in s) / len(s)
-    except ZeroDivisionError:
-        logging.warning("Empty string processed as unreadable")
-        printable_ratio = 0
+    len_s = len(s)
+    if len_s == 0:
+        return False
+    printable_chars = set(string.printable)
+    printable_ratio = sum(c in printable_chars for c in s) / len_s
     return printable_ratio > 0.95  # 95% of characters are printable
 
 
@@ -201,10 +198,16 @@ def detect_datatype(source: Any) -> DataType:
     formatted_source = format_source(str(source), 30)
 
     if url:
-        from langchain.document_loaders.youtube import \
-            ALLOWED_NETLOCK as YOUTUBE_ALLOWED_NETLOCS
+        YOUTUBE_ALLOWED_NETLOCKS = {
+            "www.youtube.com",
+            "m.youtube.com",
+            "youtu.be",
+            "youtube.com",
+            "vid.plus",
+            "www.youtube-nocookie.com",
+        }
 
-        if url.netloc in YOUTUBE_ALLOWED_NETLOCS:
+        if url.netloc in YOUTUBE_ALLOWED_NETLOCKS:
             logging.debug(f"Source of `{formatted_source}` detected as `youtube_video`.")
             return DataType.YOUTUBE_VIDEO
 
@@ -424,9 +427,14 @@ def validate_config(config_data):
                     "llama2",
                     "vertexai",
                     "google",
+                    "aws_bedrock",
+                    "mistralai",
+                    "vllm",
+                    "groq",
                 ),
                 Optional("config"): {
                     Optional("model"): str,
+                    Optional("model_name"): str,
                     Optional("number_documents"): int,
                     Optional("temperature"): float,
                     Optional("max_tokens"): int,
@@ -440,6 +448,8 @@ def validate_config(config_data):
                     Optional("query_type"): str,
                     Optional("api_key"): str,
                     Optional("endpoint"): str,
+                    Optional("model_kwargs"): dict,
+                    Optional("local"): bool,
                 },
             },
             Optional("vectordb"): {
@@ -449,23 +459,41 @@ def validate_config(config_data):
                 Optional("config"): object,  # TODO: add particular config schema for each provider
             },
             Optional("embedder"): {
-                Optional("provider"): Or("openai", "gpt4all", "huggingface", "vertexai", "azure_openai", "google"),
+                Optional("provider"): Or(
+                    "openai",
+                    "gpt4all",
+                    "huggingface",
+                    "vertexai",
+                    "azure_openai",
+                    "google",
+                    "mistralai",
+                ),
                 Optional("config"): {
                     Optional("model"): Optional(str),
                     Optional("deployment_name"): Optional(str),
                     Optional("api_key"): str,
                     Optional("title"): str,
                     Optional("task_type"): str,
+                    Optional("vector_dimension"): int,
                 },
             },
             Optional("embedding_model"): {
-                Optional("provider"): Or("openai", "gpt4all", "huggingface", "vertexai", "azure_openai", "google"),
+                Optional("provider"): Or(
+                    "openai",
+                    "gpt4all",
+                    "huggingface",
+                    "vertexai",
+                    "azure_openai",
+                    "google",
+                    "mistralai",
+                ),
                 Optional("config"): {
                     Optional("model"): str,
                     Optional("deployment_name"): str,
                     Optional("api_key"): str,
                     Optional("title"): str,
                     Optional("task_type"): str,
+                    Optional("vector_dimension"): int,
                 },
             },
             Optional("chunker"): {

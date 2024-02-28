@@ -8,9 +8,9 @@ import numpy as np
 from openai import OpenAI
 from tqdm import tqdm
 
-from embedchain.config.eval.base import GroundednessConfig
-from embedchain.eval.base import BaseMetric
-from embedchain.utils.eval import EvalData, EvalMetric
+from embedchain.config.evaluation.base import GroundednessConfig
+from embedchain.evaluation.base import BaseMetric
+from embedchain.utils.evaluation import EvalData, EvalMetric
 
 
 class Groundedness(BaseMetric):
@@ -21,7 +21,7 @@ class Groundedness(BaseMetric):
     def __init__(self, config: Optional[GroundednessConfig] = None):
         super().__init__(name=EvalMetric.GROUNDEDNESS.value)
         self.config = config or GroundednessConfig()
-        api_key = self.config.api_key or os.environ["OPENAI_API_KEY"]
+        api_key = self.config.api_key or os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise ValueError("Please set the OPENAI_API_KEY environment variable or pass the `api_key` in config.")
         self.client = OpenAI(api_key=api_key)

@@ -56,9 +56,9 @@ class TestQdrantDB(unittest.TestCase):
         App(config=app_config, db=db, embedding_model=embedder)
 
         resp = db.get(ids=[], where={})
-        self.assertEqual(resp, {"ids": []})
+        self.assertEqual(resp, {"ids": [], "metadatas": []})
         resp2 = db.get(ids=["123", "456"], where={"url": "https://ai.ai"})
-        self.assertEqual(resp2, {"ids": []})
+        self.assertEqual(resp2, {"ids": [], "metadatas": []})
 
     @patch("embedchain.vectordb.qdrant.QdrantClient")
     @patch.object(uuid, "uuid4", side_effect=TEST_UUIDS)
@@ -75,11 +75,10 @@ class TestQdrantDB(unittest.TestCase):
         app_config = AppConfig(collect_metrics=False)
         App(config=app_config, db=db, embedding_model=embedder)
 
-        embeddings = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
         documents = ["This is a test document.", "This is another test document."]
         metadatas = [{}, {}]
         ids = ["123", "456"]
-        db.add(embeddings, documents, metadatas, ids)
+        db.add(documents, metadatas, ids)
         qdrant_client_mock.return_value.upsert.assert_called_once_with(
             collection_name="embedchain-store-1526",
             points=Batch(
@@ -96,7 +95,7 @@ class TestQdrantDB(unittest.TestCase):
                         "metadata": {"text": "This is another test document."},
                     },
                 ],
-                vectors=embeddings,
+                vectors=[[1, 2, 3], [4, 5, 6]],
             ),
         )
 
@@ -120,7 +119,7 @@ class TestQdrantDB(unittest.TestCase):
             query_filter=models.Filter(
                 must=[
                     models.FieldCondition(
-                        key="payload.metadata.doc_id",
+                        key="metadata.doc_id",
                         match=models.MatchValue(
                             value="123",
                         ),
