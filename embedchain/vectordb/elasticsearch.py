@@ -161,7 +161,7 @@ class ElasticsearchDB(BaseVectorDB):
 
     def split_list(self, input_list, chunk_size):
         """
-        将列表按照指定大小切分为二维数组
+        灏嗗垪琛ㄦ寜鐓ф寚瀹氬ぇ灏忓垏鍒嗕负浜岀淮鏁扮粍
         """
         return [input_list[i:i + chunk_size] for i in range(0, len(input_list), chunk_size)]
     
@@ -295,7 +295,7 @@ class ElasticsearchDB(BaseVectorDB):
             }
         }
 
-        # 执行删除操作
+        # 鎵ц鍒犻櫎鎿嶄綔
         self.client.delete_by_query(index=self._get_index(), body=query)
             
     def multi_field_match_query(
@@ -389,7 +389,7 @@ class ElasticsearchDB(BaseVectorDB):
         #     "script_score": {
         #         "query": {"ids":{"values":ids}},
         #         "script": {
-        #             "source": "cosineSimilarity(params.input_query_vector, 'embeddings') + 1.0",  ##es不允许分数为负数
+        #             "source": "cosineSimilarity(params.input_query_vector, 'embeddings') + 1.0",  ##es涓嶅厑璁稿垎鏁颁负璐熸暟
         #             "params": {"input_query_vector": query_vector},
         #         },
         #     }

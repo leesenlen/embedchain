@@ -3,25 +3,15 @@ app:
   config:
     id: "default-app"
 
-llm:
-  provider: azure_openai
-  config:
-    model: gpt-4-1106-preview 
-    deployment_name: gpt-4-1106-preview 
-    temperature: 0.5
-    max_tokens: 1000
-    top_p: 1
-    stream: false
-    # number_documents: 1
-    # template: |
-    #   Use the following pieces of context to answer the query at the end.
-    #   If you don't know the answer, just say that you don't know, don't try to make up an answer.
-
-    #   $context
-
-    #   Query: $query
-
-    #   Helpful Answer:
+# llm:
+#   provider: azure_openai
+#   config:
+#     model: gpt-4-1106-preview 
+#     deployment_name: gpt-4-1106-preview 
+#     temperature: 0.5
+#     max_tokens: 1000
+#     top_p: 1
+#     stream: false
 
 embedder:
   provider: azure_openai
