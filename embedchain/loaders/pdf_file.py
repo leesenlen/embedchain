@@ -24,8 +24,8 @@ class PdfFileLoader(BaseLoader):
         pages = loader.load_and_split()
         if not len(pages):
             raise ValueError("No data found")
-        meta_data = {}
-        meta_data["url"] = url
+        metadata = {}
+        metadata["url"] = url
         for page in pages:
             content = page.page_content
             content = clean_string(content)
