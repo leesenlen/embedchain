@@ -23,7 +23,7 @@ class BaseModel:
 			"field_name": "用户状态",
 			"field_type": "string",
 			"description": "",
-            "enum_translate":"0:离职,1:在职"
+            "delete_values":"0"
 		}
 	},
 	"format_type": "json /  concat",
@@ -31,7 +31,7 @@ class BaseModel:
     }   
     """
 
-    ALLOWED_SCHEMA_FIELDS = {'field_name', 'field_type', 'description', 'enum_translate'}
+    ALLOWED_SCHEMA_FIELDS = {'field_name', 'field_type', 'description', 'delete_values'}
     def __init__(
         self, database: str, 
         table_name: str, 
