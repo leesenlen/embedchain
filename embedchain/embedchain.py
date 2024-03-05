@@ -223,22 +223,17 @@ class EmbedChain(JSONSerializable):
         metadatas = embeddings_data["metadata"]
         ids = embeddings_data["id"]
         embeddings = embeddings_data.get("embeddings")
-
-        new_metadatas = []
-        for m in metadatas:
-            # Note: Metadata is the function argument
-            if metadata:
-                # Spread whatever is in metadata into the new object.
-                m.update(metadata)
-
-            new_metadatas.append(m)
-        metadatas = new_metadatas
+        
+        # Note: Metadata is the function argument
+        if metadata:
+            # Spread whatever is in metadata into the new object.
+            metadatas.update(metadata)
 
         self.db.upsert_structure(
-            embeddings=embeddings,
-            documents=documents,
-            metadatas=metadatas,
-            ids=ids,
+            embedding=embeddings,
+            document=documents,
+            metadata=metadatas,
+            id=ids,
             is_deleted=embeddings_data['is_deleted']
         )
         return embeddings_data["doc_id"]
