@@ -204,7 +204,7 @@ class EmbedChain(JSONSerializable):
         else:
             config = AddConfig()
 
-        if data_type != DataType.STRUCTURE:
+        if data_type != 'structure':
             raise ValueError("Only structure data types are supported.")
         else:
             try:
