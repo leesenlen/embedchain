@@ -13,16 +13,15 @@ class StructureLoader(BaseLoader):
             json_data = json.loads(data['json'], ensure_ascii=False)
         json_data = data['json']
         table = data['model']
-        result = []
         if isinstance(table, BaseModel):
-            doc_content = clean_string(self.parse_row(json_data,table))
-            result.append({"primary_key": json_data[table.primary_key],"content": doc_content, "meta_data": {"fields":json_data}})
-            return result
+            doc_content,is_deleted = self.parse_row(json_data,table)
+            return {"primary_key": json_data[table.primary_key],"content": clean_string(doc_content), "meta_data": {"fields":json_data},"is_deleted":is_deleted}    
         else:
             raise Exception("Model is not a BaseModel")
         
     def parse_row(self,row:dict,table: BaseModel):        
         content = {}
+        is_deleted = False
         if table.table_schema is not None:
             for column,value in table.table_schema.items():
                 if table.ignore_fields is not None:
@@ -30,15 +29,16 @@ class StructureLoader(BaseLoader):
                     if column in split:
                         continue
                 if value is not None and "field_name" in value:
-                    if "enum_translate" in value:
-                        enum_translate = self.convert_to_dict(value['enum_translate'])
-                        content[value['field_name']] = enum_translate[str(row[column])]
+                    if "delete_values" in value:
+                        pairs = value['delete_values'].split(',')
+                        if str(row[column]) in pairs:
+                            is_deleted = True
                     else:
                         content[value['field_name']] = str(row[column])
         else:
             content = row
         
-        return ",".join([f"{key}为{value}" for key, value in content.items()])
+        return ",".join([f"{key}为{value}" for key, value in content.items()]),is_deleted
     
     def convert_to_dict(self, enum_translate:str):
         pairs = enum_translate.split(',')

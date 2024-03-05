@@ -206,6 +206,46 @@ class ElasticsearchDB(BaseVectorDB):
             bulk(self.client, batch_docs)
         self.client.indices.refresh(index=self._get_index())
 
+    def upsert_structure(
+        self,
+        embedding: list[float],
+        document: str,
+        metadata: object,
+        id: str,
+        is_deleted: bool,
+        **kwargs: Optional[dict[str, any]],
+    ) -> Any:
+        
+        embedding = self.embedder.embedding_fn(document)
+        result = self.check_if_exist(id)
+        if result and is_deleted:
+            self.client.delete(index=self._get_index(), id=id)
+        else:
+            if not is_deleted:  
+                batch_docs = []
+                batch_docs.append(
+                    {
+                        "_index": self._get_index(),
+                        "_id": id,
+                        "_op_type": "update",
+                        "doc": {"text": document, "metadata": metadata, "embeddings": embedding},
+                        "doc_as_upsert": True
+                    }
+                )
+                bulk(self.client, batch_docs)
+                self.client.indices.refresh(index=self._get_index())
+
+    def check_if_exist(self, id: str) -> bool:
+        """
+        check if a document with the given id exists in the database
+        :param id: id of document
+        :type id: str
+        """
+        try:
+            return self.client.exists(index=self._get_index(), id=id)
+        except Exception as e:
+            return False
+        
 
     def publish_knowledge(self, conditions: dict):
         query = {
@@ -305,70 +345,11 @@ class ElasticsearchDB(BaseVectorDB):
         or_conditions: dict[str, any],
         size: int = 5
     ) -> Union[list[tuple[str, dict]], list[str]]:
-        _source = ["text", "metadata"]
-
-        query = {
-            "min_score": 1,
-            "query": {"bool": {"should": [{"match": {"text": input_query}}]}}
-        }
-        if and_conditions is not None:
-            for field, value in and_conditions.items():
-                if isinstance(value, list):
-                    query["query"]["bool"].setdefault("must", []).append({"terms": {field: value}})
-                else:
-                    query["query"]["bool"].setdefault("must", []).append({"match": {field: value}})
-
-        if or_conditions is not None:
-            for field, value in or_conditions.items():
-                if isinstance(value, list):
-                    query["query"]["bool"].setdefault("should", []).append({"terms": {field: value}})
-                else:
-                    query["query"]["bool"].setdefault("should", []).append({"match": {field: value}})
-        response = self.client.search(index=self._get_index(), body=query, _source=_source, size=22)
-        
-        ids = []
-        contexts = []
-        docs = response["hits"]["hits"]
-        i = 1
-        for doc in docs:
-            if i <= 2:
-                context = doc["_source"]["text"]
-                contexts.append(context)
-                i += 1
-            else:
-                ids.append(doc["_id"])
-        
-        input_query_vector = self.embedder.embedding_fn(input_query)
-        query_vector = input_query_vector[0]
-
-        knn_query = {
-            "min_score": 1,
-            "query": {"ids":{"values":ids}},
-            "knn": {
-            "field": "embeddings",
-            "query_vector": query_vector,
-            "k": 5,
-            "num_candidates": 20
-            }
-        }  
-
-        response = self.client.search(index=self._get_index(), body=knn_query, _source=_source, size=size-2)
-
-
-        # input_query_vector = self.embedder.embedding_fn(input_query)
-        # query_vector = input_query_vector[0]     
-
         # _source = ["text", "metadata"]
 
         # query = {
         #     "min_score": 1,
-        #     "query": {"bool": {"should": [{"match": {"text": input_query}}]}},
-        #     "knn": {
-        #     "field": "embeddings",
-        #     "query_vector": query_vector,
-        #     "k": 5,
-        #     "num_candidates": 20
-        #     }
+        #     "query": {"bool": {"should": [{"match": {"text": input_query}}]}}
         # }
         # if and_conditions is not None:
         #     for field, value in and_conditions.items():
@@ -383,11 +364,70 @@ class ElasticsearchDB(BaseVectorDB):
         #             query["query"]["bool"].setdefault("should", []).append({"terms": {field: value}})
         #         else:
         #             query["query"]["bool"].setdefault("should", []).append({"match": {field: value}})
-        # response = self.client.search(index=self._get_index(), body=query, _source=_source, size=size)
+        # response = self.client.search(index=self._get_index(), body=query, _source=_source, size=22)
+        
+        # ids = []
+        # contexts = []
+        # docs = response["hits"]["hits"]
+        # i = 1
+        # for doc in docs:
+        #     if i <= 2:
+        #         context = doc["_source"]["text"]
+        #         contexts.append(context)
+        #         i += 1
+        #     else:
+        #         ids.append(doc["_id"])
+        
+        # input_query_vector = self.embedder.embedding_fn(input_query)
+        # query_vector = input_query_vector[0]
+
+        # knn_query = {
+        #     "min_score": 1,
+        #     "query": {"ids":{"values":ids}},
+        #     "knn": {
+        #     "field": "embeddings",
+        #     "query_vector": query_vector,
+        #     "k": 5,
+        #     "num_candidates": 20
+        #     }
+        # }  
+
+        # response = self.client.search(index=self._get_index(), body=knn_query, _source=_source, size=size-2)
+
+
+        input_query_vector = self.embedder.embedding_fn(input_query)
+        query_vector = input_query_vector[0]
+
+        _source = ["text", "metadata"]
+        
+        query = {
+            "min_score": 1,
+            "query": {"bool": {"should": [{"match": {"text": input_query}}]}},
+            "knn": {
+            "field": "embeddings",
+            "query_vector": query_vector,
+            "k": 5,
+            "num_candidates": 20
+            }
+        }
+        if and_conditions is not None:
+            for field, value in and_conditions.items():
+                if isinstance(value, list):
+                    query["query"]["bool"].setdefault("must", []).append({"terms": {field: value}})
+                else:
+                    query["query"]["bool"].setdefault("must", []).append({"match": {field: value}})
+        
+        if or_conditions is not None:
+            for field, value in or_conditions.items():
+                if isinstance(value, list):
+                    query["query"]["bool"].setdefault("should", []).append({"terms": {field: value}})
+                else:
+                    query["query"]["bool"].setdefault("should", []).append({"match": {field: value}})
+        response = self.client.search(index=self._get_index(), body=query, _source=_source, size=size)
         
         # query = {
         #     "script_score": {
-        #         "query": {"ids":{"values":ids}},
+        #         "query": {"bool": {"must": [{"exists": {"field": "text"}}]}},
         #         "script": {
         #             "source": "cosineSimilarity(params.input_query_vector, 'embeddings') + 1.0",  ##es不允许分数为负数
         #             "params": {"input_query_vector": query_vector},
@@ -407,13 +447,15 @@ class ElasticsearchDB(BaseVectorDB):
         #         else:
         #             query["script_score"]["query"]["bool"].setdefault("should", []).append({"match": {field: value}})
 
-        # response = self.client.search(index=self._get_index(), query=query, _source=_source, size=size-2)
+        # response = self.client.search(index=self._get_index(), query=query, _source=_source, size=size)
         
         docs = response["hits"]["hits"]
-        # contexts = []
+        contexts = []
         for doc in docs:
             context = doc["_source"]["text"]
             contexts.append(context)
+            print(doc["_score"])
+            print(context)
         return contexts
         
 

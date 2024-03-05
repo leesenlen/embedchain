@@ -1,6 +1,7 @@
 import hashlib
 import logging
 from typing import Optional,Any
+import os
 
 from embedchain.config.add_config import ChunkerConfig
 from embedchain.helpers.json_serializable import JSONSerializable
@@ -45,7 +46,7 @@ class BaseChunker(JSONSerializable):
             meta_data["hash"] = hash_data
             meta_data["data_type"] = self.data_type.value
 
-            meta_data["subject"] = subject if subject is not None else url
+            meta_data["subject"] = subject if subject is not None else os.path.basename(url)
             meta_data["status"] = 1
 
             chunks = self.get_chunks(content)
@@ -55,7 +56,7 @@ class BaseChunker(JSONSerializable):
                 if idMap.get(chunk_id) is None and len(chunk) >= min_chunk_size:
                     idMap[chunk_id] = True
                     chunk_ids.append(chunk_id)
-                    documents.append(f"主题：{meta_data['subject']},段落内容：{chunk}")
+                    documents.append(f"主题：{meta_data['subject']}。段落内容：{chunk}")
                     metadatas.append(meta_data)
         return {
             "documents": documents,

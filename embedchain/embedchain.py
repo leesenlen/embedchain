@@ -184,7 +184,64 @@ class EmbedChain(JSONSerializable):
             ids=ids,
         )
         return embeddings_data["doc_id"]
-        
+    
+
+    def upsert_structure(
+        self,
+        source: Any,
+        data_type: Optional[DataType] = None,
+        metadata: Optional[dict[str, Any]] = None,
+        config: Optional[AddConfig] = None,
+        loader: Optional[BaseLoader] = None,
+        chunker: Optional[BaseChunker] = None):
+        """
+        Only supports structure data types.
+        """
+        if config is not None:
+            pass
+        elif self.chunker is not None:
+            config = AddConfig(chunker=self.chunker)
+        else:
+            config = AddConfig()
+
+        if data_type != DataType.STRUCTURE:
+            raise ValueError("Only structure data types are supported.")
+        else:
+            try:
+                data_type = DataType(data_type)
+            except ValueError:
+                logging.info(
+                    f"Invalid data_type: '{data_type}', using `custom` instead.\n Check docs to pass the valid data type: `https://docs.embedchain.ai/data-sources/overview`"  # noqa: E501
+                )
+                data_type = DataType.CUSTOM
+
+        data_formatter = DataFormatter(data_type, config, loader, chunker)
+
+        embeddings_data = data_formatter.chunker.chunks(data_formatter.loader, source, metadata, config=config.chunker)
+        # spread chunking results
+        documents = embeddings_data["document"]
+        metadatas = embeddings_data["metadata"]
+        ids = embeddings_data["id"]
+        embeddings = embeddings_data.get("embeddings")
+
+        new_metadatas = []
+        for m in metadatas:
+            # Note: Metadata is the function argument
+            if metadata:
+                # Spread whatever is in metadata into the new object.
+                m.update(metadata)
+
+            new_metadatas.append(m)
+        metadatas = new_metadatas
+
+        self.db.upsert_structure(
+            embeddings=embeddings,
+            documents=documents,
+            metadatas=metadatas,
+            ids=ids,
+            is_deleted=embeddings_data['is_deleted']
+        )
+        return embeddings_data["doc_id"]
 
     def add(
         self,
@@ -537,7 +594,6 @@ class EmbedChain(JSONSerializable):
         or_conditions: Optional[dict[str, any]] = None,
         size: int = 5
     ) -> Union[list[tuple[str, str, str]], list[str]]:
-        
 
         contexts = self.db.multi_field_match_query(
             input_query=input_query,

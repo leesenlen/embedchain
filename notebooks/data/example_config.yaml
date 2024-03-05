@@ -16,13 +16,14 @@ app:
 embedder:
   provider: azure_openai
   config:
-    model: text-embedding-ada-002
-    deployment_name: text-embedding-ada-002
+    model: text-embedding-3-large
+    deployment_name: text-embedding-3-large
+    vector_dimension: 1024
 
 vectordb:
   provider: elasticsearch
   config:
-    collection_name: 'sailvan_vector_db'
+    collection_name: 'sailvan_test'
     es_url: http://10.199.1.77:9200
     basic_auth:
       - elastic
@@ -31,6 +32,6 @@ vectordb:
 
 chunker:
   chunk_size: 1000
-  chunk_overlap: 30
+  chunk_overlap: 10
   length_function: 'len'
-  min_chunk_size: 30
+  min_chunk_size: 10
