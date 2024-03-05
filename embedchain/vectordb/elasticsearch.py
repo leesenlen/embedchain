@@ -214,14 +214,13 @@ class ElasticsearchDB(BaseVectorDB):
         id: str,
         is_deleted: bool,
         **kwargs: Optional[dict[str, any]],
-    ) -> Any:
-        
-        embedding = self.embedder.embedding_fn(document)
+    ) -> Any:  
         result = self.check_if_exist(id)
         if result and is_deleted:
             self.client.delete(index=self._get_index(), id=id)
         else:
             if not is_deleted:  
+                embedding = self.embedder.embedding_fn(document)
                 batch_docs = []
                 batch_docs.append(
                     {
@@ -233,7 +232,7 @@ class ElasticsearchDB(BaseVectorDB):
                     }
                 )
                 bulk(self.client, batch_docs)
-                self.client.indices.refresh(index=self._get_index())
+        self.client.indices.refresh(index=self._get_index())
 
     def check_if_exist(self, id: str) -> bool:
         """
