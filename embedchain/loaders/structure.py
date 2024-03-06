@@ -15,6 +15,8 @@ class StructureLoader(BaseLoader):
         table = data['model']
         if isinstance(table, BaseModel):
             doc_content,is_deleted = self.parse_row(json_data,table)
+            if 'extra' in data:
+                doc_content = f"{doc_content}{data['extra']}"
             return {"primary_key": json_data[table.primary_key],"content": clean_string(doc_content), "meta_data": {"fields":json_data},"is_deleted":is_deleted}    
         else:
             raise Exception("Model is not a BaseModel")
