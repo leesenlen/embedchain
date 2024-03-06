@@ -220,14 +220,14 @@ class ElasticsearchDB(BaseVectorDB):
             self.client.delete(index=self._get_index(), id=id)
         else:
             if not is_deleted:  
-                embedding = self.embedder.embedding_fn(document)
+                embedding = self.embedder.embedding_fn([document])
                 batch_docs = []
                 batch_docs.append(
                     {
                         "_index": self._get_index(),
                         "_id": id,
                         "_op_type": "update",
-                        "doc": {"text": document, "metadata": metadata, "embeddings": embedding},
+                        "doc": {"text": document, "metadata": metadata, "embeddings": embedding[0]},
                         "doc_as_upsert": True
                     }
                 )
