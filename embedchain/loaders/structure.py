@@ -36,11 +36,11 @@ class StructureLoader(BaseLoader):
                         if str(row[column]) in pairs:
                             is_deleted = True
                     else:
-                        content[value['field_name']] = str(row[column])
+                        content[value['field_name']] = str(row[column]) if row[column] is not None else "空"
         else:
             content = row
                
-        return ",".join([f"{key}为{value}" if value is not None else f"{key}为空" for key, value in content.items()]),is_deleted
+        return ",".join([f"{key}为{value}" for key, value in content.items()]),is_deleted
     
     def convert_to_dict(self, enum_translate:str):
         pairs = enum_translate.split(',')
