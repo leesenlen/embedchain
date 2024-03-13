@@ -13,7 +13,7 @@ from embedchain.config import ElasticsearchDBConfig
 from embedchain.helpers.json_serializable import register_deserializable
 from embedchain.utils.misc import chunks
 from embedchain.vectordb.base import BaseVectorDB
-
+import tiktoken
 
 @register_deserializable
 class ElasticsearchDB(BaseVectorDB):
@@ -194,6 +194,7 @@ class ElasticsearchDB(BaseVectorDB):
 
             batch_docs = []
             for id, text, metadata, embedding in zip(ids, docs, metadatas, embeddings):
+                metadata['tokens_num'] = self.num_tokens_from_string(text, "cl100k_base")
                 batch_docs.append(
                     {
                         "_index": self._get_index(),
@@ -221,6 +222,7 @@ class ElasticsearchDB(BaseVectorDB):
         else:
             if not is_deleted:  
                 embedding = self.embedder.embedding_fn([document])
+                metadata['tokens_num'] = self.num_tokens_from_string(document, "cl100k_base")
                 batch_docs = []
                 batch_docs.append(
                     {
@@ -341,122 +343,130 @@ class ElasticsearchDB(BaseVectorDB):
         self,
         input_query: list[str],
         and_conditions: dict[str, any],
-        or_conditions: dict[str, any],
-        size: int = 5
+        match_weight: float,
+        knn_weight: float
     ) -> Union[list[tuple[str, dict]], list[str]]:
-        # _source = ["text", "metadata"]
-
-        # query = {
-        #     "min_score": 1,
-        #     "query": {"bool": {"should": [{"match": {"text": input_query}}]}}
-        # }
-        # if and_conditions is not None:
-        #     for field, value in and_conditions.items():
-        #         if isinstance(value, list):
-        #             query["query"]["bool"].setdefault("must", []).append({"terms": {field: value}})
-        #         else:
-        #             query["query"]["bool"].setdefault("must", []).append({"match": {field: value}})
-
-        # if or_conditions is not None:
-        #     for field, value in or_conditions.items():
-        #         if isinstance(value, list):
-        #             query["query"]["bool"].setdefault("should", []).append({"terms": {field: value}})
-        #         else:
-        #             query["query"]["bool"].setdefault("should", []).append({"match": {field: value}})
-        # response = self.client.search(index=self._get_index(), body=query, _source=_source, size=22)
-        
-        # ids = []
-        # contexts = []
-        # docs = response["hits"]["hits"]
-        # i = 1
-        # for doc in docs:
-        #     if i <= 2:
-        #         context = doc["_source"]["text"]
-        #         contexts.append(context)
-        #         i += 1
-        #     else:
-        #         ids.append(doc["_id"])
-        
-        # input_query_vector = self.embedder.embedding_fn(input_query)
-        # query_vector = input_query_vector[0]
-
-        # knn_query = {
-        #     "min_score": 1,
-        #     "query": {"ids":{"values":ids}},
-        #     "knn": {
-        #     "field": "embeddings",
-        #     "query_vector": query_vector,
-        #     "k": 5,
-        #     "num_candidates": 20
-        #     }
-        # }  
-
-        # response = self.client.search(index=self._get_index(), body=knn_query, _source=_source, size=size-2)
-
-
+        # knn与关键字一起时加过滤条件需要都加上，只加在query里knn并不会生效
         input_query_vector = self.embedder.embedding_fn(input_query)
         query_vector = input_query_vector[0]
-
         _source = ["text", "metadata"]
-        
-        query = {
-            "min_score": 1,
-            "query": {"bool": {"should": [{"match": {"text": input_query}}]}},
-            "knn": {
-            "field": "embeddings",
-            "query_vector": query_vector,
-            "k": 5,
-            "num_candidates": 20
-            }
+        if match_weight == 1 and knn_weight == 0:
+            contexts = self.match_query(input_query,_source,and_conditions, match_weight)
+        elif match_weight == 0 and knn_weight == 1:
+            contexts = self.knn_query(query_vector, _source, and_conditions, knn_weight)
+        else:
+            match_contexts = self.match_query(input_query, _source, and_conditions, match_weight)
+            knn_contexts = self.knn_query(query_vector, _source, and_conditions, knn_weight)
+            contexts = self.reciprocal_rank_fusion(match_contexts, knn_contexts)
+            
+        # token计数不能超过6000
+        max_tokens = 6000
+        # es获取的文档个数不能超过20
+        max_size = 8
+        sum_tokens = 0
+        size = 0
+        for context in contexts:
+            sum_tokens += context["tokens_num"]
+            size += 1
+            if size > max_size:
+                break
+            if sum_tokens > max_tokens:
+                break
+        return contexts[:size-1]
+
+    def reciprocal_rank_fusion(self, match_contexts, knn_contexts):
+        """
+        rrf算法输出混合最佳搜索
+        """
+        # 初始化结果字典
+        fused_ranking = {}
+        # 统计每个文档的倒数排名之和
+        for rank_list in [match_contexts, knn_contexts]:
+            for rank, map in enumerate(rank_list):
+                if map['id'] not in fused_ranking:
+                    map['rank'] = 0
+                    fused_ranking[map['id']] = map
+                fused_ranking[map['id']]['rank'] += 1 / (rank + 1)
+
+        sorted_list = sorted(fused_ranking.values(), key=lambda x: x["rank"], reverse=True)
+        return sorted_list
+
+    def match_query(self, input_query: list[str],
+        _source: list[str],
+        and_conditions: dict[str, any],
+        match_weight: float):
+        """
+        关键字搜索
+        """
+        match_query = {
+            "query": {"bool": {"must": [{"match": {"text": {"query": input_query, "boost": match_weight}}}]}},
         }
         if and_conditions is not None:
             for field, value in and_conditions.items():
                 if isinstance(value, list):
-                    query["query"]["bool"].setdefault("must", []).append({"terms": {field: value}})
+                    match_query["query"]["bool"].setdefault("must", []).append({"terms": {field: value}})
                 else:
-                    query["query"]["bool"].setdefault("must", []).append({"match": {field: value}})
-        
-        if or_conditions is not None:
-            for field, value in or_conditions.items():
-                if isinstance(value, list):
-                    query["query"]["bool"].setdefault("should", []).append({"terms": {field: value}})
-                else:
-                    query["query"]["bool"].setdefault("should", []).append({"match": {field: value}})
-        response = self.client.search(index=self._get_index(), body=query, _source=_source, size=size)
-        
-        # query = {
-        #     "script_score": {
-        #         "query": {"bool": {"must": [{"exists": {"field": "text"}}]}},
-        #         "script": {
-        #             "source": "cosineSimilarity(params.input_query_vector, 'embeddings') + 1.0",  ##es不允许分数为负数
-        #             "params": {"input_query_vector": query_vector},
-        #         },
-        #     }
-        # }
-        # if and_conditions is not None:
-        #     for field, value in and_conditions.items():
-        #         if isinstance(value, list):
-        #             query["script_score"]["query"]["bool"].setdefault("must", []).append({"terms": {field: value}})
-        #         else:
-        #             query["script_score"]["query"]["bool"].setdefault("must", []).append({"match": {field: value}})
-        # if or_conditions is not None:
-        #     for field, value in or_conditions.items():
-        #         if isinstance(value, list):
-        #             query["script_score"]["query"]["bool"].setdefault("should", []).append({"terms": {field: value}})
-        #         else:
-        #             query["script_score"]["query"]["bool"].setdefault("should", []).append({"match": {field: value}})
+                    match_query["query"]["bool"].setdefault("must", []).append({"match": {field: value}})
 
-        # response = self.client.search(index=self._get_index(), query=query, _source=_source, size=size)
-        
+        response = self.client.search(index=self._get_index(), body=match_query, _source=_source, size=50)
         docs = response["hits"]["hits"]
         contexts = []
         for doc in docs:
             context = doc["_source"]["text"]
-            contexts.append(context)
-            print(doc["_score"])
-            print(context)
+            id = doc["_id"]
+            knowledge_id = doc["_source"]["metadata"]["knowledge_id"] if "knowledge_id" in doc["_source"]["metadata"] else 0
+            if "tokens_num" in doc["_source"]["metadata"] and doc["_source"]["metadata"]["tokens_num"] is not None:
+                tokens_num = doc["_source"]["metadata"]["tokens_num"]
+            else:
+                tokens_num = self.num_tokens_from_string(context,"cl100k_base")
+            map = {"context":context,"id":id,"knowledge_id":knowledge_id,"tokens_num":tokens_num}
+            contexts.append(map)
         return contexts
-        
+
+    def knn_query(self,query_vector,
+        _source: list[str],
+        and_conditions: dict[str, any],
+        knn_weight: float):
+        """
+        knn搜索
+        """
+        knn_query = {
+            "knn": {
+                "field": "embeddings",
+                "query_vector": query_vector,
+                "k": 50,
+                "num_candidates": 100,
+                "boost": knn_weight
+            }
+        }
+        if and_conditions is not None:
+            knn_query["knn"]["filter"] = []
+            for field, value in and_conditions.items():
+                if isinstance(value, list):
+                    knn_query["knn"]["filter"].append({"terms": {field: value}})
+                else:
+                    knn_query["knn"]["filter"].append({"term": {field: value}})
+
+        response = self.client.search(index=self._get_index(), body=knn_query, _source=_source, size=50)
+        docs = response["hits"]["hits"]
+        contexts = []
+        for doc in docs:
+            context = doc["_source"]["text"]
+            id = doc["_id"]
+            knowledge_id = doc["_source"]["metadata"]["knowledge_id"]
+            if "tokens_num" in doc["_source"]["metadata"] and doc["_source"]["metadata"]["tokens_num"] is not None:
+                tokens_num = doc["_source"]["metadata"]["tokens_num"]
+            else:
+                tokens_num = self.num_tokens_from_string(context, "cl100k_base")
+            map = {"context": context, "id": id, "knowledge_id": knowledge_id, "tokens_num": tokens_num}
+            contexts.append(map)
+        return contexts
+
+    def num_tokens_from_string(self, string: str, encoding_name: str) -> int:
+        """Returns the number of tokens in a text string."""
+        encoding = tiktoken.get_encoding(encoding_name)
+        tokens_num = len(encoding.encode(string))
+        return tokens_num
 
     def query(
         self,
