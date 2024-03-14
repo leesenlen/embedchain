@@ -6,7 +6,7 @@ try:
     from pptx import Presentation
 except ImportError:
     raise ImportError(
-        'PPT file requires extra dependencies. Install with `pip install --upgrade "embedchain[python-pptx]"`'
+        'PPT file requires extra dependencies. Install with `pip install python-pptx`'
     ) from None
 from embedchain.helpers.json_serializable import register_deserializable
 from embedchain.loaders.base_loader import BaseLoader

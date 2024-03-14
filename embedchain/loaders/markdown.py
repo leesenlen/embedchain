@@ -4,7 +4,7 @@ try:
     import markdown2
 except ImportError:
     raise ImportError(
-        'md file requires extra dependencies. Install with `pip install --upgrade "embedchain[markdown2]"`'
+        'md file requires extra dependencies. Install with `pip install markdown2`'
     ) from None
 from embedchain.helpers.json_serializable import register_deserializable
 from embedchain.loaders.base_loader import BaseLoader

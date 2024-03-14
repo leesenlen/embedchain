@@ -21,7 +21,7 @@ class ElasticsearchDB(BaseVectorDB):
     Elasticsearch as vector database
     """
 
-    BATCH_SIZE = 100
+    BATCH_SIZE = 50
 
     def __init__(
         self,
@@ -343,8 +343,9 @@ class ElasticsearchDB(BaseVectorDB):
         self,
         input_query: list[str],
         and_conditions: dict[str, any],
-        match_weight: float,
-        knn_weight: float
+        match_weight: float = 0.5,
+        knn_weight: float = 0.5,
+        knowledge_tokens: int = 6000
     ) -> Union[list[tuple[str, dict]], list[str]]:
         # knn与关键字一起时加过滤条件需要都加上，只加在query里knn并不会生效
         input_query_vector = self.embedder.embedding_fn(input_query)
@@ -359,10 +360,9 @@ class ElasticsearchDB(BaseVectorDB):
             knn_contexts = self.knn_query(query_vector, _source, and_conditions, knn_weight)
             contexts = self.reciprocal_rank_fusion(match_contexts, knn_contexts)
             
-        # token计数不能超过6000
-        max_tokens = 6000
+        # token计数不能超过knowledge_tokens，默认6000
         # es获取的文档个数不能超过20
-        max_size = 8
+        max_size = 10
         sum_tokens = 0
         size = 0
         for context in contexts:
@@ -370,7 +370,7 @@ class ElasticsearchDB(BaseVectorDB):
             size += 1
             if size > max_size:
                 break
-            if sum_tokens > max_tokens:
+            if sum_tokens > knowledge_tokens:
                 break
         return contexts[:size-1]
 
