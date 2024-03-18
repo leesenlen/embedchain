@@ -14,6 +14,7 @@ from embedchain.helpers.json_serializable import register_deserializable
 from embedchain.utils.misc import chunks
 from embedchain.vectordb.base import BaseVectorDB
 import tiktoken
+from datetime import datetime
 
 @register_deserializable
 class ElasticsearchDB(BaseVectorDB):
@@ -173,7 +174,6 @@ class ElasticsearchDB(BaseVectorDB):
         ids: list[str],
         **kwargs: Optional[dict[str, any]],
     ) -> Any:
-        
         documents_list = self.split_list(documents, self.BATCH_SIZE)
         embeddings_list = []
         for documents_chunk in documents_list:
@@ -302,18 +302,26 @@ class ElasticsearchDB(BaseVectorDB):
         knn_weight: float = 0.5,
         knowledge_tokens: int = 6000
     ) -> Union[list[tuple[str, dict]], list[str]]:
+        # 起始时间
+        start_time = datetime.now()
         # knn与关键字一起时加过滤条件需要都加上，只加在query里knn并不会生效
         input_query_vector = self.embedder.embedding_fn(input_query)
+        logging.info(f"查询作向量化耗时：{(datetime.now() - start_time).total_seconds() * 1000}")
         query_vector = input_query_vector[0]
         _source = ["text", "metadata"]
         if match_weight == 1 and knn_weight == 0:
             contexts = self.match_query(input_query,_source,and_conditions, match_weight)
+            logging.info(f"关键字搜索耗时：{(datetime.now() - start_time).total_seconds()* 1000}")
         elif match_weight == 0 and knn_weight == 1:
             contexts = self.knn_query(query_vector, _source, and_conditions, knn_weight)
+            logging.info(f"knn语义搜索耗时：{(datetime.now() - start_time).total_seconds() * 1000}")
         else:
             match_contexts = self.match_query(input_query, _source, and_conditions, match_weight)
+            logging.info(f"关键字搜索耗时：{(datetime.now() - start_time).total_seconds() * 1000}")
             knn_contexts = self.knn_query(query_vector, _source, and_conditions, knn_weight)
+            logging.info(f"knn语义搜索耗时：{(datetime.now() - start_time).total_seconds() * 1000}")
             contexts = self.reciprocal_rank_fusion(match_contexts, knn_contexts)
+            logging.info(f"混合搜索耗时：{(datetime.now() - start_time).total_seconds() * 1000}")
             
         # token计数不能超过knowledge_tokens，默认6000
         # es获取的文档个数不能超过20
