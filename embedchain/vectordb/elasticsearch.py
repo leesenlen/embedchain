@@ -327,7 +327,7 @@ class ElasticsearchDB(BaseVectorDB):
                 break
             if sum_tokens > knowledge_tokens:
                 break
-        return contexts[:size-1]
+        return contexts[:size]
 
     def reciprocal_rank_fusion(self, match_contexts, knn_contexts):
         """
