@@ -288,7 +288,7 @@ class ElasticsearchDB(BaseVectorDB):
         query = {
             "query": {
                 "terms": {
-                    "metadata.doc_id": doc_ids
+                    "metadata.system_doc_id": doc_ids
                 }
             },
             "script": {
