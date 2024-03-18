@@ -246,7 +246,6 @@ class ElasticsearchDB(BaseVectorDB):
             return self.client.exists(index=self._get_index(), id=id)
         except Exception as e:
             return False
-        
 
     def publish_knowledge(self, conditions: dict):
         query = {
@@ -265,24 +264,7 @@ class ElasticsearchDB(BaseVectorDB):
             }
         }
         self.client.update_by_query(index=self._get_index(), body=query)
-
-    def publish_knowledge(self, conditions: dict):
-        query = {
-            "query": {
-                "bool": {
-                    "must": [{"match": {key: value}} for key, value in conditions.items()]
-                }
-            },
-            "script": {
-                "source": """
-                    if (ctx._source.containsKey('is_public')) {
-                        ctx._source.is_public = 1;
-                    }
-                """,
-                "lang": "painless"
-            }
-        }
-        self.client.update_by_query(index=self._get_index(), body=query)
+        self.client.indices.refresh(index=self._get_index())
 
     def enable_docs(self, doc_ids: list,status: int=1):
         query = {
@@ -300,44 +282,17 @@ class ElasticsearchDB(BaseVectorDB):
             }
         }
         self.client.update_by_query(index=self._get_index(), body=query)
-
-    def delete(
-        self,
-        conditionsList: list
-    ):
-        actions = []
-        for conditions in conditionsList:
-            actions.append(
-                {
-                    "_index": self._get_index(),
-                    "_op_type": "delete",
-                    "_query": {
-                        "bool": {
-                            "must": [
-                                {"match": {field: value} for field, value in conditions.items()}
-                            ]
-                        }
-                    }
-                }
-            )
-        bulk(self.client, actions)
+        self.client.indices.refresh(index=self._get_index())
 
     def _delete_by_query(
         self,
         conditions: dict    
     ):
-        query = {
-            "query": {
-                "bool": {
-                    "must": [
-                         {"match": {field: value}} for field, value in conditions.items()
-                    ]
-                }
-            }
-        }
-
-        # 执行删除操作
+        query = {"query": {"bool": {"must": []}}}
+        for key, value in conditions.items():
+            query["query"]["bool"]["must"].append({"term": {key: value}})
         self.client.delete_by_query(index=self._get_index(), body=query)
+        self.client.indices.refresh(index=self._get_index())
             
     def multi_field_match_query(
         self,

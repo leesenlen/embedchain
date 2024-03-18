@@ -103,13 +103,6 @@ class EmbedChain(JSONSerializable):
             raise ValueError(f"Boolean value expected but got {type(value)}.")
         self.llm.online = value
 
-    def delete_file(
-        self,
-        doc_id: str):
-
-        self.db._delete_by_query({'metadata.doc_id':doc_id})
-    
-
     def delete(
         self,
         conditions: dict):
