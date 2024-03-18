@@ -565,7 +565,7 @@ class ElasticsearchDB(BaseVectorDB):
         """
         # NOTE: The method is preferred to an attribute, because if collection name changes,
         # it's always up-to-date.
-        return f"{self.config.collection_name}_{self.embedder.vector_dimension}".lower()
+        return self.config.collection_name
 
     def delete(self, where):
         """Delete documents from the database."""
