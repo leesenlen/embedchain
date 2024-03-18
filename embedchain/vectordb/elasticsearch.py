@@ -306,22 +306,22 @@ class ElasticsearchDB(BaseVectorDB):
         start_time = datetime.now()
         # knn与关键字一起时加过滤条件需要都加上，只加在query里knn并不会生效
         input_query_vector = self.embedder.embedding_fn(input_query)
-        logging.info(f"查询作向量化耗时：{(datetime.now() - start_time).total_seconds() * 1000}")
+        logging.info(f"查询作向量化耗时：{(datetime.now() - start_time).total_seconds()}")
         query_vector = input_query_vector[0]
         _source = ["text", "metadata"]
         if match_weight == 1 and knn_weight == 0:
             contexts = self.match_query(input_query,_source,and_conditions, match_weight)
-            logging.info(f"关键字搜索耗时：{(datetime.now() - start_time).total_seconds()* 1000}")
+            logging.info(f"关键字搜索耗时：{(datetime.now() - start_time).total_seconds()}")
         elif match_weight == 0 and knn_weight == 1:
             contexts = self.knn_query(query_vector, _source, and_conditions, knn_weight)
-            logging.info(f"knn语义搜索耗时：{(datetime.now() - start_time).total_seconds() * 1000}")
+            logging.info(f"knn语义搜索耗时：{(datetime.now() - start_time).total_seconds()}")
         else:
             match_contexts = self.match_query(input_query, _source, and_conditions, match_weight)
-            logging.info(f"关键字搜索耗时：{(datetime.now() - start_time).total_seconds() * 1000}")
+            logging.info(f"关键字搜索耗时：{(datetime.now() - start_time).total_seconds()}")
             knn_contexts = self.knn_query(query_vector, _source, and_conditions, knn_weight)
-            logging.info(f"knn语义搜索耗时：{(datetime.now() - start_time).total_seconds() * 1000}")
+            logging.info(f"knn语义搜索耗时：{(datetime.now() - start_time).total_seconds()}")
             contexts = self.reciprocal_rank_fusion(match_contexts, knn_contexts)
-            logging.info(f"混合搜索耗时：{(datetime.now() - start_time).total_seconds() * 1000}")
+            logging.info(f"混合搜索耗时：{(datetime.now() - start_time).total_seconds()}")
             
         # token计数不能超过knowledge_tokens，默认6000
         # es获取的文档个数不能超过20
