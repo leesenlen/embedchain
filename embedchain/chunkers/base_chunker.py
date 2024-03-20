@@ -25,7 +25,7 @@ class BaseChunker(JSONSerializable):
         if metadata is None:
             metadata = {}
         app_id =  metadata.get("app_id",1) #应用ID
-        knowledge_id = metadata.get("knowledge_id",0) #知识库ID   
+        knowledge_id = metadata.get("knowledge_id",1) #默认知识库ID
         subject = metadata.get("subject",None) #主题
 
         data_result = loader.load_data(src)
