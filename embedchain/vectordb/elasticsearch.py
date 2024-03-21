@@ -300,7 +300,8 @@ class ElasticsearchDB(BaseVectorDB):
         and_conditions: dict[str, any],
         match_weight: float = 0.5,
         knn_weight: float = 0.5,
-        knowledge_tokens: int = 6000
+        knowledge_tokens: int = 6000,
+        model: str='gpt-3.5-turbo'
     ) -> Union[list[tuple[str, dict]], list[str]]:
         # 起始时间
         start_time = datetime.now()
@@ -310,15 +311,15 @@ class ElasticsearchDB(BaseVectorDB):
         query_vector = input_query_vector[0]
         _source = ["text", "metadata"]
         if match_weight == 1 and knn_weight == 0:
-            contexts = self.match_query(input_query,_source,and_conditions, match_weight)
+            contexts = self.match_query(input_query,_source,and_conditions, match_weight,model)
             logging.info(f"关键字搜索耗时：{(datetime.now() - start_time).total_seconds()}")
         elif match_weight == 0 and knn_weight == 1:
-            contexts = self.knn_query(query_vector, _source, and_conditions, knn_weight)
+            contexts = self.knn_query(query_vector, _source, and_conditions, knn_weight,model)
             logging.info(f"knn语义搜索耗时：{(datetime.now() - start_time).total_seconds()}")
         else:
-            match_contexts = self.match_query(input_query, _source, and_conditions, match_weight)
+            match_contexts = self.match_query(input_query, _source, and_conditions, match_weight,model)
             logging.info(f"关键字搜索耗时：{(datetime.now() - start_time).total_seconds()}")
-            knn_contexts = self.knn_query(query_vector, _source, and_conditions, knn_weight)
+            knn_contexts = self.knn_query(query_vector, _source, and_conditions, knn_weight,model)
             logging.info(f"knn语义搜索耗时：{(datetime.now() - start_time).total_seconds()}")
             contexts = self.reciprocal_rank_fusion(match_contexts, knn_contexts)
             logging.info(f"混合搜索耗时：{(datetime.now() - start_time).total_seconds()}")
@@ -336,7 +337,7 @@ class ElasticsearchDB(BaseVectorDB):
             if sum_tokens > knowledge_tokens:
                 size -= 1
                 break
-            
+
         return contexts[:size]
 
     def reciprocal_rank_fusion(self, match_contexts, knn_contexts):
@@ -359,7 +360,8 @@ class ElasticsearchDB(BaseVectorDB):
     def match_query(self, input_query: list[str],
         _source: list[str],
         and_conditions: dict[str, any],
-        match_weight: float):
+        match_weight: float,
+        model: str):
         """
         关键字搜索
         """
@@ -380,10 +382,7 @@ class ElasticsearchDB(BaseVectorDB):
             context = doc["_source"]["text"]
             id = doc["_id"]
             knowledge_id = doc["_source"]["metadata"]["knowledge_id"] if "knowledge_id" in doc["_source"]["metadata"] else 0
-            if "tokens_num" in doc["_source"]["metadata"] and doc["_source"]["metadata"]["tokens_num"] is not None:
-                tokens_num = doc["_source"]["metadata"]["tokens_num"]
-            else:
-                tokens_num = self.num_tokens_from_string(context,"cl100k_base")
+            tokens_num = self.num_tokens_from_messages(context,model)
             map = {"context":context,"id":id,"knowledge_id":knowledge_id,"tokens_num":tokens_num}
             contexts.append(map)
         return contexts
@@ -391,7 +390,8 @@ class ElasticsearchDB(BaseVectorDB):
     def knn_query(self,query_vector,
         _source: list[str],
         and_conditions: dict[str, any],
-        knn_weight: float):
+        knn_weight: float,
+        model: str):
         """
         knn搜索
         """
@@ -419,19 +419,58 @@ class ElasticsearchDB(BaseVectorDB):
             context = doc["_source"]["text"]
             id = doc["_id"]
             knowledge_id = doc["_source"]["metadata"]["knowledge_id"]
-            if "tokens_num" in doc["_source"]["metadata"] and doc["_source"]["metadata"]["tokens_num"] is not None:
-                tokens_num = doc["_source"]["metadata"]["tokens_num"]
-            else:
-                tokens_num = self.num_tokens_from_string(context, "cl100k_base")
+            tokens_num = self.num_tokens_from_messages(context, model)
             map = {"context": context, "id": id, "knowledge_id": knowledge_id, "tokens_num": tokens_num}
             contexts.append(map)
         return contexts
 
-    def num_tokens_from_string(self, string: str, encoding_name: str) -> int:
+    def num_tokens_from_string(self, string: str, encoding_name: str, model:str) -> int:
         """Returns the number of tokens in a text string."""
+        if model is not None:
+            return self.num_tokens_from_messages(string,model)
         encoding = tiktoken.get_encoding(encoding_name)
         tokens_num = len(encoding.encode(string))
         return tokens_num
+
+    def num_tokens_from_messages(self, messages, model="gpt-3.5-turbo-0613"):
+        """Return the number of tokens used by a list of messages."""
+        try:
+            encoding = tiktoken.encoding_for_model(model)
+        except KeyError:
+            print("Warning: model not found. Using cl100k_base encoding.")
+            encoding = tiktoken.get_encoding("cl100k_base")
+        if model in {
+            "gpt-3.5-turbo-0613",
+            "gpt-3.5-turbo-16k-0613",
+            "gpt-4-0314",
+            "gpt-4-32k-0314",
+            "gpt-4-0613",
+            "gpt-4-32k-0613",
+        }:
+            tokens_per_message = 3
+            tokens_per_name = 1
+        elif model == "gpt-3.5-turbo-0301":
+            tokens_per_message = 4  # every message follows <|start|>{role/name}\n{content}<|end|>\n
+            tokens_per_name = -1  # if there's a name, the role is omitted
+        elif "gpt-3.5-turbo" in model:
+            print("Warning: gpt-3.5-turbo may update over time. Returning num tokens assuming gpt-3.5-turbo-0613.")
+            return self.num_tokens_from_messages(messages, model="gpt-3.5-turbo-0613")
+        elif "gpt-4" in model:
+            print("Warning: gpt-4 may update over time. Returning num tokens assuming gpt-4-0613.")
+            return self.num_tokens_from_messages(messages, model="gpt-4-0613")
+        else:
+            raise NotImplementedError(
+                f"""num_tokens_from_messages() is not implemented for model {model}. See https://github.com/openai/openai-python/blob/main/chatml.md for information on how messages are converted to tokens."""
+            )
+        num_tokens = 0
+        for message in messages:
+            num_tokens += tokens_per_message
+            for key, value in message.items():
+                num_tokens += len(encoding.encode(value))
+                if key == "name":
+                    num_tokens += tokens_per_name
+        num_tokens += 3  # every reply is primed with <|start|>assistant<|message|>
+        return num_tokens
 
     def query(
         self,

@@ -581,7 +581,8 @@ class EmbedChain(JSONSerializable):
         and_conditions: Optional[dict[str, any]] = None,
         match_weight: float = 0.5,
         knn_weight: float = 0.5,
-        knowledge_tokens: int = 6000
+        knowledge_tokens: int = 6000,
+        model: str="gpt-3.5-turbo"
     ) -> Union[list[tuple[str, str, str]], list[str]]:
 
         contexts = self.db.multi_field_match_query(
@@ -589,7 +590,8 @@ class EmbedChain(JSONSerializable):
             and_conditions=and_conditions,
             match_weight=match_weight,
             knn_weight=knn_weight,
-            knowledge_tokens=knowledge_tokens
+            knowledge_tokens=knowledge_tokens,
+            model=model
         )
         return contexts
 
