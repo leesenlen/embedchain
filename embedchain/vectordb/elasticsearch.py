@@ -424,10 +424,8 @@ class ElasticsearchDB(BaseVectorDB):
             contexts.append(map)
         return contexts
 
-    def num_tokens_from_string(self, string: str, encoding_name: str, model:str) -> int:
+    def num_tokens_from_string(self, string: str, encoding_name: str) -> int:
         """Returns the number of tokens in a text string."""
-        if model is not None:
-            return self.num_tokens_from_messages(string,model)
         encoding = tiktoken.get_encoding(encoding_name)
         tokens_num = len(encoding.encode(string))
         return tokens_num
