@@ -324,7 +324,7 @@ class ElasticsearchDB(BaseVectorDB):
             logging.info(f"混合搜索耗时：{(datetime.now() - start_time).total_seconds()}")
             
         # token计数不能超过knowledge_tokens，默认6000
-        # es获取的文档个数不能超过20
+        # es获取的文档个数不能超过10
         max_size = 10
         sum_tokens = 0
         size = 0
@@ -334,7 +334,9 @@ class ElasticsearchDB(BaseVectorDB):
             if size > max_size:
                 break
             if sum_tokens > knowledge_tokens:
+                size -= 1
                 break
+            
         return contexts[:size]
 
     def reciprocal_rank_fusion(self, match_contexts, knn_contexts):
