@@ -109,6 +109,15 @@ class EmbedChain(JSONSerializable):
     
         self.db._delete_by_query({"metadata."+field: value for field, value in conditions.items()})
 
+    def _delete_by_id(self, id: str):
+        self.db._delete_by_id(id)
+
+    def paged_query(self, 
+        and_conditions: dict[str, any],
+        page_number: int,
+        page_size: int):
+        return self.db.paged_query(and_conditions, page_number, page_size)
+
     def publish_knowledge(
         self,
         knowledge_id: str
@@ -122,7 +131,17 @@ class EmbedChain(JSONSerializable):
         """
         关闭/开启文档
         """
-        self.db.enable_docs(doc_ids,status)    
+        self.db.enable_docs(doc_ids,status)  
+
+    def enable_segment(self, segment_id: str, status: int=1):
+        """
+        关闭/开启文档片段
+        """
+        self.db.enable_segment(segment_id,status)
+
+    def upsert_document(self, document: str,id: str = None, 
+                        metadata: object = None):
+        return self.db.upsert_document(document,id,metadata)
 
     def upsert(
         self,

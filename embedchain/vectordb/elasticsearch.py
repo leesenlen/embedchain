@@ -15,6 +15,7 @@ from embedchain.utils.misc import chunks
 from embedchain.vectordb.base import BaseVectorDB
 import tiktoken
 from datetime import datetime
+import hashlib
 
 @register_deserializable
 class ElasticsearchDB(BaseVectorDB):
@@ -236,6 +237,29 @@ class ElasticsearchDB(BaseVectorDB):
                 bulk(self.client, batch_docs)
         self.client.indices.refresh(index=self._get_index())
 
+    def upsert_document(self, document: str,id: str = None, 
+                        metadata: object = None):
+        hash = hashlib.sha256(document.encode()).hexdigest()
+        embedding = self.embedder.embedding_fn([document])
+        if id is None:
+            if "doc_id" in metadata:
+                id = metadata['doc_id'] + "-" + hash
+            else:
+                id = str(metadata['knowledge_id'] ) + "-" + hash
+                metadata['doc_id'] = id
+        metadata['hash'] = hash
+        metadata['status'] = 1
+        metadata['tokens_num'] = self.num_tokens_from_string(document, "cl100k_base")     
+        update_body = {
+            "doc": {"text": document, "metadata": metadata, "embeddings": embedding[0]},
+            "doc_as_upsert": True  # 如果文档不存在则插入
+        }
+
+        # 执行 upsert 操作
+        self.client.update(index=self._get_index(), id=id, body=update_body)
+        self.client.indices.refresh(index=self._get_index())
+        return id
+
     def check_if_exist(self, id: str) -> bool:
         """
         check if a document with the given id exists in the database
@@ -284,6 +308,17 @@ class ElasticsearchDB(BaseVectorDB):
         self.client.update_by_query(index=self._get_index(), body=query)
         self.client.indices.refresh(index=self._get_index())
 
+    def enable_segment(self, segment_id: str, status: int=1):
+        update_body = {
+            "doc": {
+                "status": status
+            }
+        }
+
+        # 执行更新操作
+        self.client.update(index=self._get_index(), id=segment_id, body=update_body)
+        self.client.indices.refresh(index=self._get_index())
+
     def _delete_by_query(
         self,
         conditions: dict    
@@ -293,6 +328,57 @@ class ElasticsearchDB(BaseVectorDB):
             query["query"]["bool"]["must"].append({"term": {key: value}})
         self.client.delete_by_query(index=self._get_index(), body=query)
         self.client.indices.refresh(index=self._get_index())
+
+    def _delete_by_id(self, id: str):
+        self.client.delete(index=self._get_index(), id=id)
+        self.client.indices.refresh(index=self._get_index())
+
+    def paged_query(self, 
+        and_conditions: dict[str, any],
+        page_number: int,
+        page_size: int):
+        """
+        分页查询
+        """
+        # 定义分页参数
+        page_number = 1  # 页码
+        page_size = 10   # 每页文档数量
+        from_index = (page_number - 1) * page_size
+
+        _source = ["text", "metadata"]
+        query = {
+            "query": {"bool": {"must": []}},
+            "from": from_index,
+            "size": page_size
+        }
+        if and_conditions is not None:
+            for field, value in and_conditions.items():
+                if isinstance(value, list):
+                    query["query"]["bool"].setdefault("must", []).append({"terms": {field: value}})
+                else:
+                    query["query"]["bool"].setdefault("must", []).append({"match": {field: value}})
+
+        response = self.client.search(index=self._get_index(), body=query, source=_source)
+        docs = response["hits"]["hits"]
+        contexts = []
+        for doc in docs:
+            context = doc["_source"]["text"]
+            segment_id = doc["_id"]
+            knowledge_id = doc["_source"]["metadata"]["knowledge_id"] if "knowledge_id" in doc["_source"]["metadata"] else 0
+            app_id = doc["_source"]["metadata"]["app_id"] if "app_id" in doc["_source"]["metadata"] else 0
+            vecotr_doc_id = doc["_source"]["metadata"]["doc_id"] if "doc_id" in doc["_source"]["metadata"] else "0"
+            status = doc["_source"]["metadata"]["status"] if "status" in doc["_source"]["metadata"] else 0
+            doc_id = doc["_source"]["metadata"]["system_doc_id"] if "system_doc_id" in doc["_source"]["metadata"] else 0
+            map = {
+                "app_id":app_id,
+                "knowledge_id":knowledge_id,
+                "doc_id":doc_id,
+                "status":status,
+                "vecotr_doc_id":vecotr_doc_id,   
+                "text":context,
+                "segment_id":segment_id}
+            contexts.append(map)
+        return contexts
             
     def multi_field_match_query(
         self,
