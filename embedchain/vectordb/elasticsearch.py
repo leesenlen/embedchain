@@ -258,7 +258,21 @@ class ElasticsearchDB(BaseVectorDB):
         # 执行 upsert 操作
         self.client.update(index=self._get_index(), id=id, body=update_body)
         self.client.indices.refresh(index=self._get_index())
-        return id
+        return {
+            'segment_id': id,
+            'app_id': metadata['app_id'],
+            'doc_id': metadata['doc_id'],
+            'knowledge_id': metadata['knowledge_id'],
+            'system_doc_id': metadata['system_doc_id'],
+            'hash': metadata['hash'],
+            'status': 1,
+            'url': metadata['url'] if 'url' in metadata else '',
+            'tokens_num': metadata['tokens_num'],
+            'data_type': metadata['data_type'] if 'data_type' in metadata else '',
+            'subject': metadata['subject'] if 'subject' in metadata else '',
+            'link': metadata['link'] if 'link' in metadata else '',
+            'text': document
+        }
 
     def check_if_exist(self, id: str) -> bool:
         """
