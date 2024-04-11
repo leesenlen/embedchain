@@ -114,8 +114,8 @@ class EmbedChain(JSONSerializable):
 
     def paged_query(self, 
         and_conditions: dict[str, any],
-        page_number: int,
-        page_size: int):
+        page_number: int=1,
+        page_size: int=10):
         return self.db.paged_query(and_conditions, page_number, page_size)
 
     def publish_knowledge(
@@ -140,7 +140,7 @@ class EmbedChain(JSONSerializable):
         self.db.enable_segment(segment_id,status)
 
     def upsert_document(self, document: str,id: str = None, 
-                        metadata: object = None):
+                        metadata: dict = {}):
         return self.db.upsert_document(document,id,metadata)
 
     def upsert(

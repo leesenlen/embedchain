@@ -238,7 +238,7 @@ class ElasticsearchDB(BaseVectorDB):
         self.client.indices.refresh(index=self._get_index())
 
     def upsert_document(self, document: str,id: str = None, 
-                        metadata: object = None):
+                        metadata: dict = {}):
         hash = hashlib.sha256(document.encode()).hexdigest()
         embedding = self.embedder.embedding_fn([document])
         if id is None:
@@ -247,8 +247,11 @@ class ElasticsearchDB(BaseVectorDB):
             else:
                 id = str(metadata['knowledge_id'] ) + "-" + hash
                 metadata['doc_id'] = id
-        metadata['hash'] = hash
-        metadata['status'] = 1
+                metadata['hash'] = hash
+        else:
+            response = self.client.get(index=self._get_index(), id=id)    
+            metadata = response["_source"]["metadata"]    
+        
         metadata['tokens_num'] = self.num_tokens_from_string(document, "cl100k_base")     
         update_body = {
             "doc": {"text": document, "metadata": metadata, "embeddings": embedding[0]},
@@ -263,7 +266,7 @@ class ElasticsearchDB(BaseVectorDB):
             'app_id': metadata['app_id'],
             'doc_id': metadata['doc_id'],
             'knowledge_id': metadata['knowledge_id'],
-            'system_doc_id': metadata['system_doc_id'],
+            'vector_doc_id': metadata['system_doc_id'],
             'hash': metadata['hash'],
             'status': 1,
             'url': metadata['url'] if 'url' in metadata else '',
@@ -325,7 +328,9 @@ class ElasticsearchDB(BaseVectorDB):
     def enable_segment(self, segment_id: str, status: int=1):
         update_body = {
             "doc": {
-                "status": status
+                "metadata": {
+                    "status": status
+                }
             }
         }
 
@@ -380,17 +385,31 @@ class ElasticsearchDB(BaseVectorDB):
             segment_id = doc["_id"]
             knowledge_id = doc["_source"]["metadata"]["knowledge_id"] if "knowledge_id" in doc["_source"]["metadata"] else 0
             app_id = doc["_source"]["metadata"]["app_id"] if "app_id" in doc["_source"]["metadata"] else 0
-            vecotr_doc_id = doc["_source"]["metadata"]["doc_id"] if "doc_id" in doc["_source"]["metadata"] else "0"
+            vecotr_doc_id = doc["_source"]["metadata"]["doc_id"] if "doc_id" in doc["_source"]["metadata"] else ''
             status = doc["_source"]["metadata"]["status"] if "status" in doc["_source"]["metadata"] else 0
             doc_id = doc["_source"]["metadata"]["system_doc_id"] if "system_doc_id" in doc["_source"]["metadata"] else 0
+            hash = doc["_source"]["metadata"]["hash"] if "hash" in doc["_source"]["metadata"] else ''
+            url = doc["_source"]["metadata"]["url"] if "url" in doc["_source"]["metadata"] else ''
+            tokens_num = doc["_source"]["metadata"]["tokens_num"] if "tokens_num" in doc["_source"]["metadata"] else 0
+            data_type = doc["_source"]["metadata"]["data_type"] if "data_type" in doc["_source"]["metadata"] else ''
+            subject = doc["_source"]["metadata"]["subject"] if "subject" in doc["_source"]["metadata"] else ''
+            link = doc["_source"]["metadata"]["link"] if "link" in doc["_source"]["metadata"] else ''
+
             map = {
-                "app_id":app_id,
-                "knowledge_id":knowledge_id,
-                "doc_id":doc_id,
-                "status":status,
-                "vecotr_doc_id":vecotr_doc_id,   
-                "text":context,
-                "segment_id":segment_id}
+                'segment_id': segment_id,
+                'app_id': app_id,
+                'doc_id': doc_id,
+                'knowledge_id': knowledge_id,
+                'vector_doc_id': vecotr_doc_id,
+                'hash': hash,
+                'status': status,
+                'url': url,
+                'tokens_num': tokens_num,
+                'data_type': data_type,
+                'subject': subject,
+                'link': link,
+                'text': context
+            }
             contexts.append(map)
         return contexts
             
