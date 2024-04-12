@@ -503,7 +503,7 @@ class ElasticsearchDB(BaseVectorDB):
             knowledge_id = doc["_source"]["metadata"]["knowledge_id"] if "knowledge_id" in doc["_source"]["metadata"] else 0
             tokens_num = self.num_tokens_from_messages(context,model)
             link = ""
-            if "link" in doc["_source"]["metadata"] and link != "":
+            if "link" in doc["_source"]["metadata"] and doc["_source"]["metadata"]["link"] != "":
                 link = "\n\n引用来源链接地址：" + doc["_source"]["metadata"]["link"]
             map = {"context":context+link,"id":id,"knowledge_id":knowledge_id,"tokens_num":tokens_num}
             contexts.append(map)
@@ -543,7 +543,7 @@ class ElasticsearchDB(BaseVectorDB):
             knowledge_id = doc["_source"]["metadata"]["knowledge_id"]
             tokens_num = self.num_tokens_from_messages(context, model)
             link = ""
-            if "link" in doc["_source"]["metadata"] and link != "":
+            if "link" in doc["_source"]["metadata"] and doc["_source"]["metadata"]["link"] != "":
                 link = "\n\n引用来源链接地址：" + doc["_source"]["metadata"]["link"]
             map = {"context": context+link, "id": id, "knowledge_id": knowledge_id, "tokens_num": tokens_num}
             contexts.append(map)
