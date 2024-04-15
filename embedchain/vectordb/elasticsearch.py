@@ -264,9 +264,9 @@ class ElasticsearchDB(BaseVectorDB):
         return {
             'segment_id': id,
             'app_id': metadata['app_id'],
-            'doc_id': metadata['doc_id'],
+            'doc_id': metadata['system_doc_id'] if 'system_doc_id' in metadata else 0,
             'knowledge_id': metadata['knowledge_id'],
-            'vector_doc_id': metadata['system_doc_id'],
+            'vector_doc_id': metadata['doc_id'],
             'hash': metadata['hash'],
             'status': 1,
             'url': metadata['url'] if 'url' in metadata else '',
