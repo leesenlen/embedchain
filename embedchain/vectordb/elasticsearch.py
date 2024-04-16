@@ -540,7 +540,7 @@ class ElasticsearchDB(BaseVectorDB):
         for doc in docs:
             context = doc["_source"]["text"]
             id = doc["_id"]
-            knowledge_id = doc["_source"]["metadata"]["knowledge_id"]
+            knowledge_id = doc["_source"]["metadata"]["knowledge_id"] if "knowledge_id" in doc["_source"]["metadata"] else 0
             tokens_num = self.num_tokens_from_messages(context, model)
             link = ""
             if "link" in doc["_source"]["metadata"] and doc["_source"]["metadata"]["link"] != "":
