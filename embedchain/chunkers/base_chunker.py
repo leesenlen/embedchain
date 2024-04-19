@@ -50,8 +50,11 @@ class BaseChunker(JSONSerializable):
             meta_data["status"] = 1
 
             chunks = self.get_chunks(content)
+            number = 0
             for chunk in chunks:
                 chunk_id = str(doc_id) + "-" + hashlib.sha256((chunk).encode()).hexdigest()
+                number += 1
+                meta_data['segment_number'] = number
      
                 if idMap.get(chunk_id) is None and len(chunk) >= min_chunk_size:
                     idMap[chunk_id] = True

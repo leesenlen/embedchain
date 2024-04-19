@@ -364,6 +364,9 @@ class ElasticsearchDB(BaseVectorDB):
         _source = ["text", "metadata"]
         query = {
             "query": {"bool": {"must": []}},
+            "sort": [
+                {"metadata.segment_number": {"order": "asc"}}
+            ],
             "from": from_index,
             "size": page_size
         }
