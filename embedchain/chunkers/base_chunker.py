@@ -37,25 +37,26 @@ class BaseChunker(JSONSerializable):
         for data in data_records:
             content = data["content"]
 
-            meta_data = data["meta_data"]
-            url = meta_data["url"]
-            # add data type to meta data to allow query using data type
-            meta_data["app_id"] = app_id
-            meta_data["doc_id"] = doc_id
-            meta_data["knowledge_id"] = knowledge_id
-            meta_data["hash"] = hash_data
-            meta_data["data_type"] = self.data_type.value
-
-            meta_data["subject"] = subject if subject is not None else os.path.basename(url)
-            meta_data["status"] = 1
-
             chunks = self.get_chunks(content)
             number = 0
             for chunk in chunks:
+
                 chunk_id = str(doc_id) + "-" + hashlib.sha256((chunk).encode()).hexdigest()
                 number += 1
+                meta_data = {}
+                meta_data.update(data["meta_data"])
+                url = meta_data["url"]
+                # add data type to meta data to allow query using data type
+                meta_data["app_id"] = app_id
+                meta_data["doc_id"] = doc_id
+                meta_data["knowledge_id"] = knowledge_id
+                meta_data["hash"] = hash_data
+                meta_data["data_type"] = self.data_type.value
+
+                meta_data["subject"] = subject if subject is not None else os.path.basename(url)
+                meta_data["status"] = 1
                 meta_data['segment_number'] = number
-     
+
                 if idMap.get(chunk_id) is None and len(chunk) >= min_chunk_size:
                     idMap[chunk_id] = True
                     chunk_ids.append(chunk_id)
