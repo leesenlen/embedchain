@@ -354,14 +354,11 @@ class ElasticsearchDB(BaseVectorDB):
 
     def paged_query(self, 
         and_conditions: dict[str, any],
-        page_number: int,
-        page_size: int):
+        page_number: int=1,
+        page_size: int=10):
         """
         分页查询
         """
-        # 定义分页参数
-        page_number = 1  # 页码
-        page_size = 10   # 每页文档数量
         from_index = (page_number - 1) * page_size
 
         _source = ["text", "metadata"]
@@ -379,6 +376,7 @@ class ElasticsearchDB(BaseVectorDB):
 
         response = self.client.search(index=self._get_index(), body=query, source=_source)
         docs = response["hits"]["hits"]
+        total_count = response['hits']['total']['value']
         contexts = []
         for doc in docs:
             context = doc["_source"]["text"]
@@ -411,7 +409,7 @@ class ElasticsearchDB(BaseVectorDB):
                 'text': context
             }
             contexts.append(map)
-        return contexts
+        return {'items':contexts,'page':page_number,'page_size':page_size,'total':total_count}
             
     def multi_field_match_query(
         self,
