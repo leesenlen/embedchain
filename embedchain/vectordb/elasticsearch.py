@@ -564,30 +564,7 @@ class ElasticsearchDB(BaseVectorDB):
         except KeyError:
             print("Warning: model not found. Using cl100k_base encoding.")
             encoding = tiktoken.get_encoding("cl100k_base")
-        if model in {
-            "gpt-3.5-turbo",
-            "gpt-3.5-16k",
-            "gpt-4-0314",
-            "gpt-4-32k-0314",
-            "gpt-4-turbo",
-            "gpt-4-32k",
-        }:
-            tokens_per_message = 3
-            tokens_per_name = 1
-        elif model == "gpt-3.5-turbo-0301":
-            tokens_per_message = 4  # every message follows <|start|>{role/name}\n{content}<|end|>\n
-            tokens_per_name = -1  # if there's a name, the role is omitted
-        elif model in ['claude-3-sonnet-200k','claude-3-haiku-200k','claude-3-opus-200k']:
-            return self.num_tokens_from_string(messages,"cl100k_base")
-        else:
-            raise NotImplementedError(
-                f"""num_tokens_from_messages() is not implemented for model {model}. See https://github.com/openai/openai-python/blob/main/chatml.md for information on how messages are converted to tokens."""
-            )
-        num_tokens = 0
-        num_tokens += tokens_per_message
-        num_tokens += len(encoding.encode(messages))
-        num_tokens += 3  # every reply is primed with <|start|>assistant<|message|>
-        return num_tokens
+        return len(encoding.encode(messages))
 
     def query(
         self,
