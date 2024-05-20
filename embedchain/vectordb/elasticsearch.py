@@ -431,13 +431,13 @@ class ElasticsearchDB(BaseVectorDB):
         query_vector = input_query_vector[0]
         _source = ["text", "metadata"]
         if match_weight == 1 and knn_weight == 0:
-            contexts = self.match_query(input_query,_source,and_conditions, match_weight,model)
+            contexts = self.match_query(input_query[0],_source,and_conditions, match_weight,model)
             logging.info(f"关键字搜索耗时：{(datetime.now() - start_time).total_seconds()}")
         elif match_weight == 0 and knn_weight == 1:
             contexts = self.knn_query(query_vector, _source, and_conditions, knn_weight,model)
             logging.info(f"knn语义搜索耗时：{(datetime.now() - start_time).total_seconds()}")
         else:
-            match_contexts = self.match_query(input_query, _source, and_conditions, match_weight,model)
+            match_contexts = self.match_query(input_query[0], _source, and_conditions, match_weight,model)
             logging.info(f"关键字搜索耗时：{(datetime.now() - start_time).total_seconds()}")
             knn_contexts = self.knn_query(query_vector, _source, and_conditions, knn_weight,model)
             logging.info(f"knn语义搜索耗时：{(datetime.now() - start_time).total_seconds()}")
@@ -478,7 +478,7 @@ class ElasticsearchDB(BaseVectorDB):
         sorted_list = sorted(fused_ranking.values(), key=lambda x: x["rank"], reverse=True)
         return sorted_list
 
-    def match_query(self, input_query: list[str],
+    def match_query(self, input_query: str,
         _source: list[str],
         and_conditions: dict[str, any],
         match_weight: float,
