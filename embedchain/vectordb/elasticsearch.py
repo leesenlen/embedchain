@@ -446,7 +446,7 @@ class ElasticsearchDB(BaseVectorDB):
             
         # token计数不能超过knowledge_tokens，默认6000
         # es获取的文档个数不能超过10
-        max_size = 16
+        max_size = 10
         sum_tokens = 0
         size = 0
         for context in contexts:
