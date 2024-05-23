@@ -16,6 +16,8 @@ from embedchain.vectordb.base import BaseVectorDB
 import tiktoken
 from datetime import datetime
 import hashlib
+import diskcache as dc
+import os
 
 @register_deserializable
 class ElasticsearchDB(BaseVectorDB):
@@ -24,6 +26,8 @@ class ElasticsearchDB(BaseVectorDB):
     """
 
     BATCH_SIZE = 50
+
+    cache = dc.Cache(os.path.abspath(os.getenv('CACHE_PATH', '/data/aiagent/cache')), size_limit=100 * 1024**2, cull_limit=100)
 
     def __init__(
         self,
@@ -413,7 +417,24 @@ class ElasticsearchDB(BaseVectorDB):
             }
             contexts.append(map)
         return {'items':contexts,'page':page_number,'page_size':page_size,'total':total_count}
-            
+
+    def custom_cache_key(self, input_query, model='text-embedding-3-large'):
+        func_name = 'query_cache'
+        key = (func_name, tuple(input_query), model)
+        return hashlib.md5(str(key).encode()).hexdigest()
+    
+    def query_cache(self, input_query: list[str], model='text-embedding-3-large'):
+        # 生成缓存键
+        cache_key = self.custom_cache_key(input_query, model)
+        
+        # 检查缓存中是否存在结果
+        if cache_key in self.cache:
+            return self.cache[cache_key]
+        # 计算结果并缓存
+        result = self.embedder.embedding_fn(input_query)
+        self.cache.set(cache_key, result, expire=60)
+        return result
+
     def multi_field_match_query(
         self,
         input_query: list[str],
@@ -426,7 +447,7 @@ class ElasticsearchDB(BaseVectorDB):
         # 起始时间
         start_time = datetime.now()
         # knn与关键字一起时加过滤条件需要都加上，只加在query里knn并不会生效
-        input_query_vector = self.embedder.embedding_fn(input_query)
+        input_query_vector = self.query_cache(input_query)
         logging.info(f"查询作向量化耗时：{(datetime.now() - start_time).total_seconds()}")
         query_vector = input_query_vector[0]
         _source = ["text", "metadata"]
@@ -562,7 +583,6 @@ class ElasticsearchDB(BaseVectorDB):
         try:
             encoding = tiktoken.encoding_for_model(model)
         except KeyError:
-            print("Warning: model not found. Using cl100k_base encoding.")
             encoding = tiktoken.get_encoding("cl100k_base")
         return len(encoding.encode(messages))
 
