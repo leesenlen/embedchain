@@ -180,3 +180,4 @@ notebooks/*.yaml
 
 # cache db
 *.db
+res
