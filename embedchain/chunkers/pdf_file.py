@@ -45,7 +45,7 @@ class PdfFileChunker(BaseChunker, PdfParser):
         doc_id = self.generate_doc_id(app_id, "".join(each["content_with_weight"] for each in cks))
         metadatas = []
         for ck in cks:
-            if ch.get("image"):
+            if ck.get("image"):
                 # TODO 图片存储
                 ...
             chunk = ck["content_with_weight"]
