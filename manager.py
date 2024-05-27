@@ -27,10 +27,10 @@ config = {
 embedder = App.from_config(config=config)
 
 if __name__ == "__main__":
-    file_path = "C:\\Users\\admin\\Documents\\14_11245820.pdf"
+    file_path = "C:\\Users\\admin\\Documents\\docs\\30_19441887.docx"
     metadata = {'system_doc_id': 942,
                 'app_id': 2,
                 'knowledge_id': 403,
                 'subject': '14_11245820',
                 'link': 'www.google.com'}
-    doc_id = embedder.upsert(source=file_path, metadata=metadata, data_type="pdf_file")
+    doc_id = embedder.upsert(source=file_path, metadata=metadata)

@@ -44,7 +44,7 @@ class PdfFileChunker(BaseChunker, PdfParser):
         cks = self.ocr_and_layout_recognition(src, config)
         doc_id = self.generate_doc_id(app_id, "".join(each["content_with_weight"] for each in cks))
         metadatas = []
-        for ck in cks:
+        for number, ck in enumerate(cks):
             if ck.get("image"):
                 # TODO 图片存储
                 ...

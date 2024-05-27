@@ -123,7 +123,8 @@ def tokenize_chunks(chunks, doc, eng, pdf_parser):
     res = []
     # wrap up as es documents
     for ck in chunks:
-        if len(ck.strip()) == 0:continue
+        if len(ck.strip()) == 0:
+            continue
         print("--", ck)
         d = copy.deepcopy(doc)
         if pdf_parser:
