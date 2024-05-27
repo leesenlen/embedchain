@@ -49,7 +49,6 @@ class PdfFileChunker(BaseChunker, PdfParser):
                 # TODO 图片存储
                 ...
             chunk = ck["content_with_weight"]
-            number = 0
             chunk_id = str(doc_id) + "-" + hashlib.sha256(chunk.encode()).hexdigest()
             meta_data = {}
             url = src
