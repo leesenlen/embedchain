@@ -325,6 +325,20 @@ typing-extensions = {version = ">=4", markers = "python_version < \"3.11\""}
 tests = ["mypy (>=0.800)", "pytest", "pytest-asyncio"]
 
 [[package]]
+name = "aspose-slides"
+version = "24.5.0"
+description = "Aspose.Slides for Python via .NET is a presentation file formats processing library for working with Microsoft PowerPoint files without using Microsoft PowerPoint."
+optional = false
+python-versions = "<3.12,>=3.5"
+files = [
+    {file = "Aspose.Slides-24.5.0-py3-none-macosx_10_14_x86_64.whl", hash = "sha256:cca8a90f0613211b6c9cbdeb721b2f722e4f2f762fe3c59db1c282d156d2a1ea"},
+    {file = "Aspose.Slides-24.5.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:996b37cd8c18aa4c44e7c4f8707d17d9507b5db612516dbc1b7e5dc218b001d4"},
+    {file = "Aspose.Slides-24.5.0-py3-none-manylinux1_x86_64.whl", hash = "sha256:d7790f6f37683bc36e6a51f90ac99991cdac70b809cb2ede9a2b53668f932d94"},
+    {file = "Aspose.Slides-24.5.0-py3-none-win32.whl", hash = "sha256:f85748478097e772276862a8e5de6dfd89283dadcab35e59097f1a5ec5c98f07"},
+    {file = "Aspose.Slides-24.5.0-py3-none-win_amd64.whl", hash = "sha256:56906698daaf3de3c8c91ccf5f73278e3bc25ba4853d85b448ed5651aee51cef"},
+]
+
+[[package]]
 name = "asttokens"
 version = "2.4.1"
 description = "Annotate AST trees with source code positions"
@@ -548,10 +562,7 @@ files = [
 [package.dependencies]
 jmespath = ">=0.7.1,<2.0.0"
 python-dateutil = ">=2.1,<3.0.0"
-urllib3 = [
-    {version = ">=1.25.4,<1.27", markers = "python_version < \"3.10\""},
-    {version = ">=1.25.4,<2.1", markers = "python_version >= \"3.10\""},
-]
+urllib3 = {version = ">=1.25.4,<2.1", markers = "python_version >= \"3.10\""}
 
 [package.extras]
 crt = ["awscrt (==0.19.19)"]
@@ -700,7 +711,6 @@ files = [
 
 [package.dependencies]
 colorama = {version = "*", markers = "os_name == \"nt\""}
-importlib-metadata = {version = ">=4.6", markers = "python_version < \"3.10\""}
 packaging = ">=19.0"
 pyproject_hooks = "*"
 tomli = {version = ">=1.1.0", markers = "python_version < \"3.11\""}
@@ -1849,7 +1859,6 @@ files = [
 [package.dependencies]
 blinker = ">=1.6.2"
 click = ">=8.1.3"
-importlib-metadata = {version = ">=3.6.0", markers = "python_version < \"3.10\""}
 itsdangerous = ">=2.1.2"
 Jinja2 = ">=3.1.2"
 Werkzeug = ">=2.3.7"
@@ -3024,9 +3033,6 @@ files = [
     {file = "importlib_resources-6.1.2.tar.gz", hash = "sha256:308abf8474e2dba5f867d279237cd4076482c3de7104a40b41426370e891549b"},
 ]
 
-[package.dependencies]
-zipp = {version = ">=3.1.0", markers = "python_version < \"3.10\""}
-
 [package.extras]
 docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (<7.2.5)", "sphinx (>=3.5)", "sphinx-lint"]
 testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-mypy", "pytest-ruff (>=0.2.1)", "zipp (>=3.17)"]
@@ -3115,7 +3121,6 @@ prompt-toolkit = ">=3.0.41,<3.1.0"
 pygments = ">=2.4.0"
 stack-data = "*"
 traitlets = ">=5"
-typing-extensions = {version = "*", markers = "python_version < \"3.10\""}
 
 [package.extras]
 all = ["black", "curio", "docrepr", "exceptiongroup", "ipykernel", "ipyparallel", "ipywidgets", "matplotlib", "matplotlib (!=3.2.0)", "nbconvert", "nbformat", "notebook", "numpy (>=1.22)", "pandas", "pickleshare", "pytest (<7)", "pytest (<7.1)", "pytest-asyncio (<0.22)", "qtconsole", "setuptools (>=18.5)", "sphinx (>=1.3)", "sphinx-rtd-theme", "stack-data", "testpath", "trio", "typing-extensions"]
@@ -3260,7 +3265,6 @@ files = [
 ]
 
 [package.dependencies]
-importlib-metadata = {version = ">=4.8.3", markers = "python_version < \"3.10\""}
 jupyter-core = ">=4.12,<5.0.dev0 || >=5.1.dev0"
 python-dateutil = ">=2.8.2"
 pyzmq = ">=23.0"
@@ -3782,9 +3786,6 @@ files = [
     {file = "Markdown-3.5.2.tar.gz", hash = "sha256:e1ac7b3dc550ee80e602e71c1d168002f062e49f1b11e26a36264dafd4df2ef8"},
 ]
 
-[package.dependencies]
-importlib-metadata = {version = ">=4.4", markers = "python_version < \"3.10\""}
-
 [package.extras]
 docs = ["mdx-gh-links (>=0.2)", "mkdocs (>=1.5)", "mkdocs-gen-files", "mkdocs-literate-nav", "mkdocs-nature (>=0.6)", "mkdocs-section-index", "mkdocstrings[python]"]
 testing = ["coverage", "pyyaml"]
@@ -3958,7 +3959,6 @@ files = [
 contourpy = ">=1.0.1"
 cycler = ">=0.10"
 fonttools = ">=4.22.0"
-importlib-resources = {version = ">=3.2.0", markers = "python_version < \"3.10\""}
 kiwisolver = ">=1.3.1"
 numpy = ">=1.21,<2"
 packaging = ">=20.0"
@@ -4839,12 +4839,9 @@ files = [
 
 [package.dependencies]
 numpy = [
-    {version = ">=1.21.0", markers = "python_version == \"3.9\" and platform_system == \"Darwin\" and platform_machine == \"arm64\""},
-    {version = ">=1.19.3", markers = "platform_system == \"Linux\" and platform_machine == \"aarch64\" and python_version >= \"3.8\" and python_version < \"3.10\" or python_version > \"3.9\" and python_version < \"3.10\" or python_version >= \"3.9\" and platform_system != \"Darwin\" and python_version < \"3.10\" or python_version >= \"3.9\" and platform_machine != \"arm64\" and python_version < \"3.10\""},
     {version = ">=1.21.4", markers = "python_version >= \"3.10\" and platform_system == \"Darwin\" and python_version < \"3.11\""},
     {version = ">=1.21.2", markers = "platform_system != \"Darwin\" and python_version >= \"3.10\" and python_version < \"3.11\""},
-    {version = ">=1.23.5", markers = "python_version >= \"3.11\" and python_version < \"3.12\""},
-    {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
+    {version = ">=1.23.5", markers = "python_version >= \"3.11\""},
 ]
 
 [[package]]
@@ -5190,7 +5187,6 @@ files = [
 numpy = [
     {version = ">=1.22.4,<2", markers = "python_version < \"3.11\""},
     {version = ">=1.23.2,<2", markers = "python_version == \"3.11\""},
-    {version = ">=1.26.0,<2", markers = "python_version >= \"3.12\""},
 ]
 python-dateutil = ">=2.8.2"
 pytz = ">=2020.1"
@@ -6207,9 +6203,6 @@ files = [
     {file = "pypdf-3.17.4.tar.gz", hash = "sha256:ec96e2e4fc9648ac609d19c00d41e9d606e0ae2ce5a0bbe7691426f5f157166a"},
 ]
 
-[package.dependencies]
-typing_extensions = {version = ">=3.7.4.3", markers = "python_version < \"3.10\""}
-
 [package.extras]
 crypto = ["PyCryptodome", "cryptography"]
 dev = ["black", "flit", "pip-tools", "pre-commit (<2.18.0)", "pytest-cov", "pytest-socket", "pytest-timeout", "pytest-xdist", "wheel"]
@@ -6227,9 +6220,6 @@ files = [
     {file = "PyPDF2-3.0.1.tar.gz", hash = "sha256:a74408f69ba6271f71b9352ef4ed03dc53a31aa404d29b5d31f53bfecfee1440"},
     {file = "pypdf2-3.0.1-py3-none-any.whl", hash = "sha256:d16e4205cfee272fbdc0568b68d82be796540b1537508cef59388f839c191928"},
 ]
-
-[package.dependencies]
-typing_extensions = {version = ">=3.10.0.0", markers = "python_version < \"3.10\""}
 
 [package.extras]
 crypto = ["PyCryptodome"]
@@ -6735,10 +6725,7 @@ files = [
 grpcio = ">=1.41.0"
 grpcio-tools = ">=1.41.0"
 httpx = {version = ">=0.14.0", extras = ["http2"]}
-numpy = [
-    {version = ">=1.21", markers = "python_version >= \"3.8\" and python_version < \"3.12\""},
-    {version = ">=1.26", markers = "python_version >= \"3.12\""},
-]
+numpy = {version = ">=1.21", markers = "python_version >= \"3.8\" and python_version < \"3.12\""}
 portalocker = ">=2.7.0,<3.0.0"
 pydantic = ">=1.10.8"
 urllib3 = ">=1.26.14,<3"
@@ -7680,7 +7667,6 @@ files = [
 
 [package.dependencies]
 anyio = ">=3.4.0,<5"
-typing-extensions = {version = ">=3.10.0", markers = "python_version < \"3.10\""}
 
 [package.extras]
 full = ["httpx (>=0.22.0)", "itsdangerous", "jinja2", "python-multipart (>=0.0.7)", "pyyaml"]
@@ -9353,5 +9339,5 @@ youtube = ["youtube-transcript-api", "yt_dlp"]
 
 [metadata]
 lock-version = "2.0"
-python-versions = ">=3.9,<=3.13"
-content-hash = "b4bd34bd825160a9ff1f74ff8cfc3593518a0f0dcbd288fb0c520dd626d9b677"
+python-versions = ">=3.10,<3.12"
+content-hash = "668609e24eae65a8d45febd41cae67f42449411f9a268d0709bdb48cfc328f18"

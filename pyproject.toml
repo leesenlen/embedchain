@@ -91,7 +91,7 @@ exclude = '''
 color = true
 
 [tool.poetry.dependencies]
-python = ">=3.9,<=3.13"
+python = ">=3.10,<3.12"
 python-dotenv = "^1.0.0"
 langchain = "^0.1.4"
 requests = "^2.31.0"
@@ -163,6 +163,7 @@ datrie = "0.8.2"
 hanziconv = "0.3.2"
 pyclipper = "1.3.0.post5"
 oss2 = "^2.18.5"
+aspose-slides = "24.5"
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"
 pre-commit = "^3.2.2"
