@@ -27,7 +27,7 @@ config = {
 embedder = App.from_config(config=config)
 
 if __name__ == "__main__":
-    file_path = "C:\\Users\\admin\\Documents\\关于员工佩戴工牌的规定.pdf"
+    file_path = "C:\\Users\\admin\\Documents\\docs\\IT新人介绍.pptx"
     metadata = {'system_doc_id': 942,
                 'app_id': 2,
                 'knowledge_id': 425,
