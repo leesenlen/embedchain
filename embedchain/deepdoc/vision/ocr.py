@@ -58,11 +58,13 @@ def load_model(model_dir, nm):
     options.intra_op_num_threads = 2
     options.inter_op_num_threads = 2
     if False and ort.get_device() == "GPU":
+        print("using GPU")
         sess = ort.InferenceSession(
             model_file_path,
             options=options,
             providers=['CUDAExecutionProvider'])
     else:
+        print("using CPU")
         sess = ort.InferenceSession(
             model_file_path,
             options=options,
