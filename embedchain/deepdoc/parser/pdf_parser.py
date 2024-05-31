@@ -1005,7 +1005,7 @@ class RAGFlowPdfParser:
             self.is_english = re.search(r"[\na-zA-Z0-9,/¸;:'\[\]\(\)!@#$%^&*\"?<>._-]{30,}",
                                         "".join([b["text"] for b in random.choices(bxes, k=min(30, len(bxes)))]))
 
-        logging.info("Is it English:", self.is_english)
+        logging.info(f"Is it English: {self.is_english}")
 
         self.page_cum_height = np.cumsum(self.page_cum_height)
         assert len(self.page_cum_height) == len(self.page_images) + 1
