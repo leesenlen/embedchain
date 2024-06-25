@@ -119,7 +119,7 @@ def tokenize(d, t, eng):
     d["content_sm_ltks"] = rag_tokenizer.fine_grained_tokenize(d["content_ltks"])
 
 
-def tokenize_chunks(chunks, doc, eng, pdf_parser):
+def tokenize_chunks(chunks, doc, eng, is_pdf=False):
     res = []
     # wrap up as es documents
     for ck in chunks:
@@ -127,7 +127,7 @@ def tokenize_chunks(chunks, doc, eng, pdf_parser):
             continue
         print("--", ck)
         d = copy.deepcopy(doc)
-        if pdf_parser:
+        if is_pdf:
             try:
                 d["image"], poss = pdf_parser.crop(ck, need_position=True)
                 add_positions(d, poss)
@@ -142,15 +142,20 @@ def tokenize_chunks(chunks, doc, eng, pdf_parser):
 def tokenize_table(tbls, doc, eng, batch_size=10):
     res = []
     # add tables
-    for (img, rows), poss in tbls:
+    for each in tbls:
+        rows = each["content"]
+        poss = each["position"]
+        img_id = each["img_id"]
         if not rows:
             continue
         if isinstance(rows, str):
             d = copy.deepcopy(doc)
             tokenize(d, rows, eng)
             d["content_with_weight"] = rows
-            if img: d["image"] = img
-            if poss: add_positions(d, poss)
+            if img_id:
+                d["img_id"] = img_id
+            if poss:
+                add_positions(d, poss)
             res.append(d)
             continue
         de = "; " if eng else "； "
@@ -158,7 +163,7 @@ def tokenize_table(tbls, doc, eng, batch_size=10):
             d = copy.deepcopy(doc)
             r = de.join(rows[i:i + batch_size])
             tokenize(d, r, eng)
-            d["image"] = img
+            d["img_id"] = img_id
             add_positions(d, poss)
             res.append(d)
     return res
