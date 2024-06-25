@@ -177,6 +177,8 @@ class EmbedChain(JSONSerializable):
         metadatas = embeddings_data["metadatas"]
         ids = embeddings_data["ids"]
         embeddings = embeddings_data.get("embeddings")
+        # 其他信息
+        extra_data = embeddings_data.get("extra_data", None)
 
         new_metadatas = []
         for m in metadatas:
@@ -193,6 +195,7 @@ class EmbedChain(JSONSerializable):
             documents=documents,
             metadatas=metadatas,
             ids=ids,
+            extra_data=extra_data
         )
         return embeddings_data["doc_id"]
     

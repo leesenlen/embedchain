@@ -173,8 +173,11 @@ class ElasticsearchDB(BaseVectorDB):
         documents: list[str],
         metadatas: list[object],
         ids: list[str],
+        extra_data=None,
         **kwargs: Optional[dict[str, any]],
     ) -> Any:
+        if not extra_data:
+            extra_data = [] * len(ids)
         documents_list = self.split_list(documents, self.BATCH_SIZE)
         embeddings_list = []
         for documents_chunk in documents_list:
@@ -184,24 +187,25 @@ class ElasticsearchDB(BaseVectorDB):
         embeddings = [item for sublist in embeddings_list for item in sublist]
 
         for chunk in chunks(
-            list(zip(ids, documents, metadatas, embeddings)), self.BATCH_SIZE, desc="Inserting batches in elasticsearch"
+            list(zip(ids, documents, metadatas, embeddings, extra_data)), self.BATCH_SIZE, desc="Inserting batches in elasticsearch"
         ):  # noqa: E501
-            ids, docs, metadatas, embeddings = [], [], [], []
-            for id, text, metadata, embedding in chunk:
+            ids, docs, metadatas, embeddings, extra_datas = [], [], [], [], []
+            for id, text, metadata, embedding, extra in chunk:
                 ids.append(id)
                 docs.append(text)
                 metadatas.append(metadata)
                 embeddings.append(embedding)
+                extra_datas.append(extra)
 
             batch_docs = []
-            for id, text, metadata, embedding in zip(ids, docs, metadatas, embeddings):
+            for id, text, metadata, embedding, extra in zip(ids, docs, metadatas, embeddings, extra_datas):
                 metadata['tokens_num'] = self.num_tokens_from_string(text, "cl100k_base")
                 batch_docs.append(
                     {
                         "_index": self._get_index(),
                         "_id": id,
                         "_op_type": "update",
-                        "doc": {"text": text, "metadata": metadata, "embeddings": embedding},
+                        "doc": {"text": text, "metadata": metadata, "embeddings": embedding, **extra},
                         "doc_as_upsert": True
                     }
                 )

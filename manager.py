@@ -17,7 +17,7 @@ config = {
         },
     'vectordb': {
         'config': {
-            'collection_name': 'aiagent_vectordb', 'es_url': [es_host],
+            'collection_name': 'aiagent_vectordb_v2', 'es_url': [es_host],
             'basic_auth': ('elastic', es_key), 'verify_certs': False}, 'provider': 'elasticsearch'},
     'chunker': {
         'chunk_size': 1024, 'chunk_overlap': 30, 'length_function': 'len', 'min_chunk_size': 30

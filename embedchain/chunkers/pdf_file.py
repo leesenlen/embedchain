@@ -47,16 +47,17 @@ class PdfFileChunker(BaseChunker, PdfParser):
             metadata = {}
         app_id = metadata.get("app_id", 1)
         knowledge_id = metadata.get("knowledge_id", 1)
-        subject = metadata.get("subject", None)
+        subject = metadata.get("subject", os.path.basename(src))
         # OCR,布局识别
-        sections, res, doc = self.ocr_and_layout_recognition(src)
+        sections, res, doc = self.ocr_and_layout_recognition(src, subject)
         cks = self.chunk_with_layout(sections, res, config, doc)
         doc_id = self.generate_doc_id(app_id, "".join(each["content_with_weight"] for each in cks))
         metadatas = []
         for number, ck in enumerate(cks):
-            # if ck.get("image"):
-            #     # TODO 图片存储
-            #     ...
+            if ck.get("image"):
+                # TODO 图片存储
+                del ck["image"]
+
             chunk = ck["content_with_weight"]
             chunk_id = str(doc_id) + "-" + hashlib.sha256(chunk.encode()).hexdigest()
             meta_data = {}
@@ -80,10 +81,11 @@ class PdfFileChunker(BaseChunker, PdfParser):
             "documents": documents,
             "ids": chunk_ids,
             "metadatas": metadatas,
-            "doc_id": doc_id
+            "doc_id": doc_id,
+            "extra_data": cks
         }
 
-    def ocr_and_layout_recognition(self, src: str):
+    def ocr_and_layout_recognition(self, src: str, subject: str):
         """
         调用sailvan_OCR进行行OCR解析，表格识别，布局识别。然后进行页面处理
         """
@@ -100,8 +102,8 @@ class PdfFileChunker(BaseChunker, PdfParser):
         tbls = result["tables"]
         page_cum_height = result["page_cum_height"]
         doc = {
-            "docnm_kwd": os.path.basename(src),
-            "title_tks": rag_tokenizer.tokenize(re.sub(r"\.[a-zA-Z]+$", "", os.path.basename(src)))
+            "docnm_kwd": subject,
+            "title_tks": rag_tokenizer.tokenize(re.sub(r"\.[a-zA-Z]+$", "", subject))
         }
         sections = [(b["text"], self._line_tag(b, 3, page_cum_height)) for b in layout]
         res = tokenize_table(tbls, doc, False)
