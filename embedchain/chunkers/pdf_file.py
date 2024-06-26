@@ -1,6 +1,6 @@
 import re
 import os
-import time
+import datetime
 import copy
 import hashlib
 from typing import Optional, Any
@@ -51,6 +51,9 @@ class PdfFileChunker(BaseChunker, PdfParser):
         # OCR,布局识别
         sections, res, doc = self.ocr_and_layout_recognition(src, subject)
         cks = self.chunk_with_layout(sections, res, config, doc)
+        for ck in cks:
+            ck["create_time"] = str(datetime.datetime.now()).replace("T", " ")[:19]
+            ck["create_timestamp_flt"] = datetime.datetime.now().timestamp()
         doc_id = self.generate_doc_id(app_id, "".join(each["content_with_weight"] for each in cks))
         metadatas = []
         for number, ck in enumerate(cks):
