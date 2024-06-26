@@ -33,7 +33,8 @@ class ESQueryBuilder:
         highlight: Optional[Dict] = None
         aggregation: Union[List, Dict, None] = None
         keywords: Optional[List[str]] = None
-        group_docs: List[List] = None
+        group_docs: List[List] = None,
+        scores: Optional[List[float]] = None
 
     def _vector(self, qv, sim=0.8, top_k=10, boost=1.0):
         """
@@ -106,7 +107,8 @@ class ESQueryBuilder:
             aggregation=aggs,
             highlight=self.getHighlight(res),
             field=self.getFields(res, src),
-            keywords=list(kwds)
+            keywords=list(kwds),
+            scores=self.getScores(res)
         )
 
     def getAggregation(self, res, g):
@@ -349,7 +351,10 @@ class ESQueryBuilder:
         return res["hits"]["total"]
 
     def getDocIds(self, res):
-        return [d["_source"]["metadata"]["doc_id"] for d in res["hits"]["hits"]]
+        return [d["_id"] for d in res["hits"]["hits"]]
+
+    def getScores(self, res):
+        return [d["_score"] for d in res["hits"]["hits"]]
 
     def getSource(self, res):
         rr = []

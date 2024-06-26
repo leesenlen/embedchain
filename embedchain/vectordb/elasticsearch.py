@@ -441,44 +441,60 @@ class ElasticsearchDB(BaseVectorDB):
         start_time = datetime.now()
         # knn与关键字一起时加过滤条件需要都加上，只加在query里knn并不会生效
         input_query_vector = self.embedder.embedding_fn(input_query)
-
+        logging.info(f"查询作向量化耗时：{(datetime.now() - start_time).total_seconds()}")
         result = self.es_query_engine.search(input_query, and_conditions, self._get_index(), input_query_vector[0],
                                              **{"knn_threshold": knn_threshold, "match_threshold": match_threshold,
                                                 "top_k": 16, "match_weight": match_weight, "knn_weight": knn_weight,})
-        logging.info(f"查询作向量化耗时：{(datetime.now() - start_time).total_seconds()}")
-        query_vector = input_query_vector[0]
-        _source = ["text", "metadata"]
-        # 旧版rag
-        if match_weight == 1 and knn_weight == 0:
-            contexts = self.match_query(input_query[0], _source, and_conditions, match_weight, model)
-            logging.info(f"关键字搜索耗时：{(datetime.now() - start_time).total_seconds()}")
-        elif match_weight == 0 and knn_weight == 1:
-            contexts = self.knn_query(query_vector, _source, and_conditions, knn_weight, model)
-            logging.info(f"knn语义搜索耗时：{(datetime.now() - start_time).total_seconds()}")
-        else:
-            match_contexts = self.match_query(input_query[0], _source, and_conditions, match_weight, model)
-            logging.info(f"关键字搜索耗时：{(datetime.now() - start_time).total_seconds()}")
-            knn_contexts = self.knn_query(query_vector, _source, and_conditions, knn_weight, model)
-            logging.info(f"knn语义搜索耗时：{(datetime.now() - start_time).total_seconds()}")
-            contexts = self.reciprocal_rank_fusion(match_contexts, knn_contexts)
-            logging.info(f"混合搜索耗时：{(datetime.now() - start_time).total_seconds()}")
-
-        # token计数不能超过knowledge_tokens，默认6000
-        # es获取的文档个数不能超过10
-        max_size = 10
+        # TODO: 这里result返回了很多额外信息, 后续可以用来做rerank，以及坐标展示等等
+        contexts = []
         sum_tokens = 0
-        size = 0
-        for context in contexts:
-            sum_tokens += context["tokens_num"]
-            size += 1
-            if size > max_size:
-                size -= 1
-                break
+        for _id in result.ids:
+            context = result.field[_id]
+            tokens_num = self.num_tokens_from_messages(context["content_with_weight"], model)
+            sum_tokens += tokens_num
+            context["context"] = context["content_with_weight"]
+            context["id"] = _id
+            context["tokens_num"] = tokens_num
+            context["knowledge_id"] = context["metadata"]["knowledge_id"]
+            del context["content_with_weight"]
+            contexts.append(context)
             if sum_tokens > knowledge_tokens:
-                size -= 1
                 break
+        return contexts
 
-        return contexts[:size]
+        # 旧版rag
+        # query_vector = input_query_vector[0]
+        # _source = ["text", "metadata"]
+        # if match_weight == 1 and knn_weight == 0:
+        #     contexts = self.match_query(input_query[0], _source, and_conditions, match_weight, model)
+        #     logging.info(f"关键字搜索耗时：{(datetime.now() - start_time).total_seconds()}")
+        # elif match_weight == 0 and knn_weight == 1:
+        #     contexts = self.knn_query(query_vector, _source, and_conditions, knn_weight, model)
+        #     logging.info(f"knn语义搜索耗时：{(datetime.now() - start_time).total_seconds()}")
+        # else:
+        #     match_contexts = self.match_query(input_query[0], _source, and_conditions, match_weight, model)
+        #     logging.info(f"关键字搜索耗时：{(datetime.now() - start_time).total_seconds()}")
+        #     knn_contexts = self.knn_query(query_vector, _source, and_conditions, knn_weight, model)
+        #     logging.info(f"knn语义搜索耗时：{(datetime.now() - start_time).total_seconds()}")
+        #     contexts = self.reciprocal_rank_fusion(match_contexts, knn_contexts)
+        #     logging.info(f"混合搜索耗时：{(datetime.now() - start_time).total_seconds()}")
+        #
+        # # token计数不能超过knowledge_tokens，默认6000
+        # # es获取的文档个数不能超过10
+        # max_size = 10
+        # sum_tokens = 0
+        # size = 0
+        # for context in contexts:
+        #     sum_tokens += context["tokens_num"]
+        #     size += 1
+        #     if size > max_size:
+        #         size -= 1
+        #         break
+        #     if sum_tokens > knowledge_tokens:
+        #         size -= 1
+        #         break
+        #
+        # return contexts[:size]
 
     def reciprocal_rank_fusion(self, match_contexts, knn_contexts):
         """
