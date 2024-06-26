@@ -1,5 +1,8 @@
 import logging
+import re
 from typing import Any, Optional, Union
+
+from embedchain.rag.nlp import rag_tokenizer
 
 try:
     from elasticsearch import Elasticsearch
@@ -13,9 +16,12 @@ from embedchain.config import ElasticsearchDBConfig
 from embedchain.helpers.json_serializable import register_deserializable
 from embedchain.utils.misc import chunks
 from embedchain.vectordb.base import BaseVectorDB
+from embedchain.vectordb.helper.query import esQuery
 import tiktoken
 from datetime import datetime
 import hashlib
+
+
 
 @register_deserializable
 class ElasticsearchDB(BaseVectorDB):
@@ -430,12 +436,15 @@ class ElasticsearchDB(BaseVectorDB):
         # 起始时间
         start_time = datetime.now()
         # knn与关键字一起时加过滤条件需要都加上，只加在query里knn并不会生效
+
+        qry_keywords = esQuery.question(" ".join(input_query))
+
         input_query_vector = self.embedder.embedding_fn(input_query)
         logging.info(f"查询作向量化耗时：{(datetime.now() - start_time).total_seconds()}")
         query_vector = input_query_vector[0]
         _source = ["text", "metadata"]
         if match_weight == 1 and knn_weight == 0:
-            contexts = self.match_query(input_query[0],_source,and_conditions, match_weight,model)
+            contexts = self.match_query(input_query[0],_source,and_conditions, match_weight, model)
             logging.info(f"关键字搜索耗时：{(datetime.now() - start_time).total_seconds()}")
         elif match_weight == 0 and knn_weight == 1:
             contexts = self.knn_query(query_vector, _source, and_conditions, knn_weight,model)

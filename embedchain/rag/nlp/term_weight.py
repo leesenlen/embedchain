@@ -4,8 +4,8 @@ import json
 import re
 import os
 import numpy as np
-from rag.nlp import rag_tokenizer
-from api.utils.file_utils import get_project_base_directory
+from embedchain.rag.nlp import rag_tokenizer
+from embedchain.constants import ABS_PATH
 
 
 class Dealer:
@@ -62,7 +62,7 @@ class Dealer:
                 return set(res.keys())
             return res
 
-        fnm = os.path.join(get_project_base_directory(), "rag/res")
+        fnm = os.path.join(ABS_PATH, "res")
         self.ne, self.df = {}, {}
         try:
             self.ne = json.load(open(os.path.join(fnm, "ner.json"), "r", encoding="utf-8"))

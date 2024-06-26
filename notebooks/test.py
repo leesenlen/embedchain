@@ -25,6 +25,6 @@ import os
 #     print(doc_id)
 
 
-a = app.multi_field_match_query("根据007考勤管理制度，关于弹性打卡的规定",and_conditions={"metadata.app_id":2})
+a = app.multi_field_match_query("工牌丢了应该怎么办")
 for i in a:
     print(i)

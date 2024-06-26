@@ -3,8 +3,7 @@ import os
 import time
 import logging
 import re
-
-from api.utils.file_utils import get_project_base_directory
+from embedchain.constants import ABS_PATH
 
 
 class Dealer:
@@ -13,9 +12,9 @@ class Dealer:
         self.lookup_num = 100000000
         self.load_tm = time.time() - 1000000
         self.dictionary = None
-        path = os.path.join(get_project_base_directory(), "rag/res", "synonym.json")
+        path = os.path.join(ABS_PATH, "res", "synonym.json")
         try:
-            self.dictionary = json.load(open(path, 'r'))
+            self.dictionary = json.load(open(path, 'r', encoding="utf-8"))
         except Exception as e:
             logging.warn("Missing synonym.json")
             self.dictionary = {}
