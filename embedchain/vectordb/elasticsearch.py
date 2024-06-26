@@ -433,14 +433,18 @@ class ElasticsearchDB(BaseVectorDB):
             match_weight: float = 0.5,
             knn_weight: float = 0.5,
             knowledge_tokens: int = 6000,
-            model: str = 'gpt-3.5-turbo'
+            model: str = 'gpt-3.5-turbo',
+            knn_threshold: float = 0.3,
+            match_threshold: float = 0.2
     ) -> Union[list[tuple[str, dict]], list[str]]:
         # 起始时间
         start_time = datetime.now()
         # knn与关键字一起时加过滤条件需要都加上，只加在query里knn并不会生效
         input_query_vector = self.embedder.embedding_fn(input_query)
 
-        result = self.es_query_engine.search(input_query, and_conditions, self._get_index(), input_query_vector[0])
+        result = self.es_query_engine.search(input_query, and_conditions, self._get_index(), input_query_vector[0],
+                                             **{"knn_threshold": knn_threshold, "match_threshold": match_threshold,
+                                                "top_k": 16, "match_weight": match_weight, "knn_weight": knn_weight,})
         logging.info(f"查询作向量化耗时：{(datetime.now() - start_time).total_seconds()}")
         query_vector = input_query_vector[0]
         _source = ["text", "metadata"]

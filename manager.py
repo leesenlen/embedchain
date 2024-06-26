@@ -27,13 +27,13 @@ config = {
 embedder = App.from_config(config=config)
 
 if __name__ == "__main__":
-    # file_path = "C:\\Users\\admin\\Documents\\docs\\员工离职管理.pdf"
-    # metadata = {'system_doc_id': 943,
+    # file_path = "C:\\Users\\admin\\Documents\\docs\\外派人员管理制.pdf"
+    # metadata = {'system_doc_id': 944,
     #             'app_id': 2,
     #             'knowledge_id': 438,
-    #             'subject': '员工离职管理',
+    #             'subject': '外派人员管理制',
     #             'link': ''}
     # doc_id = embedder.upsert(source=file_path, metadata=metadata)
-    result = embedder.multi_field_match_query("工牌丢了应该怎么办", and_conditions={'metadata.knowledge_id': [438]})
+    result = embedder.multi_field_match_query("绩效等级分为哪几个", and_conditions={'metadata.knowledge_id': [438]})
     for each in result:
         print(each)

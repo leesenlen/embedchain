@@ -35,7 +35,7 @@ class ESQueryBuilder:
         keywords: Optional[List[str]] = None
         group_docs: List[List] = None
 
-    def _vector(self, qv, sim=0.8, top_k=10):
+    def _vector(self, qv, sim=0.8, top_k=10, boost=1.0):
         """
         根据向量生成 es query
         """
@@ -44,14 +44,16 @@ class ESQueryBuilder:
             "k": top_k,
             "similarity": sim,
             "num_candidates": top_k * 2,
-            "query_vector": [float(v) for v in qv]
+            "query_vector": qv,
+            "boost": boost
         }
 
     def search(self, question, add_conditions, index_name, embedding=None, **kwargs):
         bqry, keywords = self.qryr.question(" ".join(question))
         bqry = self.qryr.add_filters(bqry, add_conditions)
         question = " ".join(question)
-        bqry.boost = 0.05
+        # 设置关键词检索权重
+        bqry.boost = kwargs.get("match_weight", 0.05)
         s = Search()
         top_k = int(kwargs.get("top_k", 10))
         src = kwargs.get("fields", ["docnm_kwd", "content_ltks", "img_id", "title_tks", "important_kwd",
@@ -70,8 +72,8 @@ class ESQueryBuilder:
         s = s.to_dict()
         q_vec = []
         if embedding:
-            s["knn"] = self._vector(embedding, kwargs.get("similarity", 0.1), top_k)
-            s["knn"]["filter"] = bqry.to_dict()
+            s["knn"] = self._vector(embedding, kwargs.get("knn_threshold", 0.1), top_k, kwargs.get("knn_boost", 1.0))
+            s["knn"]["filter"] = self.qryr.add_filters(Q("bool", must=Q()), add_conditions).to_dict()
             if "highlight" in s:
                 del s["highlight"]
             q_vec = s["knn"]["query_vector"]
@@ -83,7 +85,7 @@ class ESQueryBuilder:
             bqry = self.qryr.add_filters(bqry, add_conditions)
             s["query"] = bqry.to_dict()
             s["knn"]["filter"] = bqry.to_dict()
-            s["knn"]["similarity"] = 0.17
+            s["knn"]["similarity"] = 0.5
             res = self.es.search(index=index_name, body=s, _source=src)
             logging.info("【Q】: {}".format(json.dumps(s)))
 
@@ -92,8 +94,6 @@ class ESQueryBuilder:
             kwds.add(k)
             for kk in rag_tokenizer.fine_grained_tokenize(k).split(" "):
                 if len(kk) < 2:
-                    continue
-                if kk in kwds:
                     continue
                 kwds.add(kk)
 
