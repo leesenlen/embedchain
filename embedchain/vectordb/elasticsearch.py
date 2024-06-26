@@ -457,6 +457,7 @@ class ElasticsearchDB(BaseVectorDB):
             context["tokens_num"] = tokens_num
             context["knowledge_id"] = context["metadata"]["knowledge_id"]
             del context["content_with_weight"]
+            del context["content_ltks"]
             contexts.append(context)
             if sum_tokens > knowledge_tokens:
                 break
