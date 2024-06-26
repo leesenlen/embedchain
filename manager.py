@@ -34,6 +34,10 @@ if __name__ == "__main__":
     #             'subject': '外派人员管理制',
     #             'link': ''}
     # doc_id = embedder.upsert(source=file_path, metadata=metadata)
-    result = embedder.multi_field_match_query("绩效等级分为哪几个", and_conditions={'metadata.knowledge_id': [438]})
-    for each in result:
-        print(each)
+    test_queryes = ["绩效等级分为哪几个", "绩效等级有哪几个", "工牌丢了怎么办", "工牌补办要多少钱", "寻佑兰是哪个部门的"]
+    for query in test_queryes:
+        print(query)
+        result = embedder.multi_field_match_query(query, and_conditions={'metadata.knowledge_id': [438]})
+        for each in result:
+            print(each)
+        print("=" * 100)
