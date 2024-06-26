@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import json
 import math
 import re
@@ -7,7 +6,8 @@ import logging
 import copy
 from elasticsearch_dsl import Q
 
-from rag.nlp import rag_tokenizer, term_weight, synonym
+from embedchain.rag.nlp import rag_tokenizer, term_weight, synonym
+
 
 class EsQueryer:
     def __init__(self, es):
@@ -169,3 +169,12 @@ class EsQueryer:
         # for k, v in dtwt.items():
         #    d += v * v
         return s / q / max(1, math.sqrt(math.log10(max(len(qtwt.keys()), len(dtwt.keys())))))# math.sqrt(q) / math.sqrt(d)
+
+    def add_filters(self, bqry, and_conditions):
+        if and_conditions:
+            for field, value in and_conditions.items():
+                if isinstance(value, list):
+                    bqry.filter.append(Q("terms", **{field: value}))
+                else:
+                    bqry.filter.append(Q("match", **{field: value}))
+        return bqry

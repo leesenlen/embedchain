@@ -27,13 +27,13 @@ config = {
 embedder = App.from_config(config=config)
 
 if __name__ == "__main__":
-    # file_path = "C:\\Users\\admin\\Documents\\docs\\关于员工佩戴工牌的规定.pdf"
-    # metadata = {'system_doc_id': 942,
+    # file_path = "C:\\Users\\admin\\Documents\\docs\\员工离职管理.pdf"
+    # metadata = {'system_doc_id': 943,
     #             'app_id': 2,
-    #             'knowledge_id': 425,
-    #             'subject': '关于员工佩戴工牌的规定',
-    #             'link': 'www.google.com'}
+    #             'knowledge_id': 438,
+    #             'subject': '员工离职管理',
+    #             'link': ''}
     # doc_id = embedder.upsert(source=file_path, metadata=metadata)
-    result = embedder.multi_field_match_query("工牌丢了应该怎么办")
+    result = embedder.multi_field_match_query("工牌丢了应该怎么办", and_conditions={'metadata.knowledge_id': [438]})
     for each in result:
         print(each)
