@@ -1599,7 +1599,7 @@ torchvision = "*"
 name = "elastic-transport"
 version = "8.12.0"
 description = "Transport classes and utilities shared among Python Elastic client libraries"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "elastic-transport-8.12.0.tar.gz", hash = "sha256:48839b942fcce199eece1558ecea6272e116c58da87ca8d495ef12eb61effaf7"},
@@ -1617,7 +1617,7 @@ develop = ["aiohttp", "furo", "mock", "pytest", "pytest-asyncio", "pytest-cov", 
 name = "elasticsearch"
 version = "8.12.1"
 description = "Python client for Elasticsearch"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "elasticsearch-8.12.1-py3-none-any.whl", hash = "sha256:cc459b7e0fb88dc85b43b9d7d254cffad552b0063a3e0a12290c8fa5f138c038"},
@@ -1630,6 +1630,26 @@ elastic-transport = ">=8,<9"
 [package.extras]
 async = ["aiohttp (>=3,<4)"]
 requests = ["requests (>=2.4.0,<3.0.0)"]
+
+[[package]]
+name = "elasticsearch-dsl"
+version = "8.14.0"
+description = "Python client for Elasticsearch"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "elasticsearch-dsl-8.14.0.tar.gz", hash = "sha256:326c6dccf32f1ff3d4c84889388590778444ba18f770adee52f24721cb97c4c7"},
+    {file = "elasticsearch_dsl-8.14.0-py3-none-any.whl", hash = "sha256:99c5cbda28a37eec05ac78e82fdc87e8641eb83956ea63a817bf0e9da3d688dd"},
+]
+
+[package.dependencies]
+elasticsearch = ">=8.0.0,<9.0.0"
+python-dateutil = "*"
+typing-extensions = "*"
+
+[package.extras]
+async = ["elasticsearch[async] (>=8.0.0,<9.0.0)"]
+develop = ["coverage", "elasticsearch[async]", "nltk", "pytest", "pytest-asyncio", "pytest-cov", "pytest-mock", "pytz", "sentence-transformers", "sphinx (>2)", "sphinx-rtd-theme (>0.5)", "tqdm", "unasync"]
 
 [[package]]
 name = "emoji"
@@ -9340,4 +9360,4 @@ youtube = ["youtube-transcript-api", "yt_dlp"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.12"
-content-hash = "75582d0007b6c4e259b59a23bf0fb673ce40d6ff6a151342b0cc2d9a63ebdf34"
+content-hash = "564472cf89ad068d1cd80b9b6db6109b35374d97af7d740021ab8f7e1b5b3d82"
