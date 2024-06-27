@@ -8,8 +8,7 @@ import logging
 import markdown
 from bs4 import BeautifulSoup
 from embedchain.rag.nlp import rag_tokenizer
-from langchain_text_splitters import MarkdownHeaderTextSplitter
-from langchain.text_splitter import Document
+from langchain.text_splitter import Document, MarkdownHeaderTextSplitter
 from embedchain.chunkers.base_chunker import BaseChunker
 from embedchain.config.add_config import ChunkerConfig
 from embedchain.helpers.json_serializable import register_deserializable
