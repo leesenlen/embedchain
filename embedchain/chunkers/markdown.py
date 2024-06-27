@@ -96,11 +96,12 @@ class MarkdownChunker(BaseChunker):
             6. content_ltks   不带格式且分词的chunk
             7. content_sm_ltks  精细分词后的chunk
         """
-        header = chunk.metadata.get("Header1", "")
-        if not header:
-            header = chunk.metadata.get("Header2", "")
-        if header:
-            subject = subject + " " + header
+        header1 = chunk.metadata.get("Header1", "")
+        if header1:
+            subject = subject + " " + header1
+        header2 = chunk.metadata.get("Header1", "")
+        if header2:
+            subject = subject + " " + header2
         extra_data = {
             "docnm_kwd": subject,
             "title_tks": rag_tokenizer.tokenize(re.sub(r"\.[a-zA-Z]+$", "", subject))
