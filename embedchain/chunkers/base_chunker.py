@@ -14,8 +14,7 @@ class BaseChunker(JSONSerializable):
         self.text_splitter = text_splitter
         self.data_type = None
 
-    def chunks(self, loader, src, metadata: Optional[dict[str, Any]] = None,config: Optional[ChunkerConfig] = None):
-        
+    def chunks(self, loader, src, metadata: Optional[dict[str, Any]] = None, config: Optional[ChunkerConfig] = None):
         documents = []
         chunk_ids = []
         idMap = {}
