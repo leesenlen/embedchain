@@ -42,7 +42,9 @@ class EsQueryer:
             txt = re.sub(r, p, txt, flags=re.IGNORECASE)
         return txt
 
-    def question(self, txt, tbl="qa", min_match="60%"):
+    def question(self, txt, tbl="qa", min_match="60%", size=10, boost=0.5):
+        if isinstance(min_match, float):
+            min_match = str(int(min_match * 100)) + "%"
         txt = re.sub(
             r"[ \r\n\t,，。？?/`!！&\^%%]+",
             " ",
@@ -62,8 +64,7 @@ class EsQueryer:
             return Q("bool",
                      must=Q("query_string", fields=self.flds,
                             type="best_fields", query=" ".join(q),
-                            boost=1)#, minimum_should_match=min_match)
-                     ), tks
+                            boost=boost), minimum_should_match=min_match), tks
 
         def need_fine_grained_tokenize(tk):
             if len(tk) < 4:

@@ -50,17 +50,21 @@ class ESQueryBuilder:
         }
 
     def search(self, question, add_conditions, index_name, embedding=None, **kwargs):
-        bqry, keywords = self.qryr.question(" ".join(question))
+        match_weight, match_threshold = kwargs.get("match_weight", 0.05), kwargs.get("match_threshold", 0.7)
+        top_k = int(kwargs.get("top_k", 10))
+        bqry, keywords = self.qryr.question(" ".join(question), min_match=match_threshold, size=top_k,
+                                            boost=match_weight)
         bqry = self.qryr.add_filters(bqry, add_conditions)
         question = " ".join(question)
         # 设置关键词检索权重
         bqry.boost = kwargs.get("match_weight", 0.05)
         s = Search()
-        top_k = int(kwargs.get("top_k", 10))
+
         src = kwargs.get("fields", ["docnm_kwd", "content_ltks", "img_id", "title_tks", "important_kwd",
                                     "metadata", "position_int", "content_with_weight"])
 
         s = s.query(bqry)
+        s = s.extra(size=top_k)
         s = s.highlight("content_ltks")
         s = s.highlight("title_ltks")
         s = s.highlight_options(
@@ -80,6 +84,11 @@ class ESQueryBuilder:
             q_vec = s["knn"]["query_vector"]
         logging.info("【Q】: {}".format(json.dumps(s)))
         res = self.es.search(index=index_name, body=s, _source=src)
+        # for DEBUG
+        s1 = {"query": s["query"]}
+        s2 = {"knn": s["knn"]}
+        res1 = self.es.search(index=index_name, body=s1, _source=src)
+        res2 = self.es.search(index=index_name, body=s2, _source=src)
         logging.info("TOTAL: {}".format(self.getTotal(res)))
         if self.getTotal(res) == 0 and "knn" in s:
             bqry, _ = self.qryr.question(question, min_match="10%")

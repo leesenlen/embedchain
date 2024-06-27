@@ -435,7 +435,7 @@ class ElasticsearchDB(BaseVectorDB):
             knowledge_tokens: int = 6000,
             model: str = 'gpt-3.5-turbo',
             knn_threshold: float = 0.3,
-            match_threshold: float = 0.2
+            match_threshold: float = 0.8
     ) -> Union[list[tuple[str, dict]], list[str]]:
         # 起始时间
         start_time = datetime.now()
@@ -444,7 +444,7 @@ class ElasticsearchDB(BaseVectorDB):
         logging.info(f"查询作向量化耗时：{(datetime.now() - start_time).total_seconds()}")
         result = self.es_query_engine.search(input_query, and_conditions, self._get_index(), input_query_vector[0],
                                              **{"knn_threshold": knn_threshold, "match_threshold": match_threshold,
-                                                "top_k": 16, "match_weight": match_weight, "knn_weight": knn_weight,})
+                                                "top_k": 16, "match_weight": match_weight, "knn_weight": knn_weight})
         # TODO: 这里result返回了很多额外信息, 后续可以用来做rerank，以及坐标展示等等
         contexts = []
         sum_tokens = 0
