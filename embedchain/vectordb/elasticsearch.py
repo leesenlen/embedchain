@@ -1,5 +1,6 @@
 import logging
-import json
+import requests
+import os
 from typing import Any, Optional, Union
 from embedchain.rag.nlp.search import ESQueryBuilder
 
@@ -430,12 +431,13 @@ class ElasticsearchDB(BaseVectorDB):
             self,
             input_query: list[str],
             and_conditions: dict[str, any],
-            match_weight: float = 0.5,
+            match_weight: float = 0.05,
             knn_weight: float = 0.5,
             knowledge_tokens: int = 6000,
             model: str = 'gpt-3.5-turbo',
             knn_threshold: float = 0.3,
-            match_threshold: float = 0.8
+            match_threshold: float = 1,
+            rerank=True
     ) -> Union[list[tuple[str, dict]], list[str]]:
         # 起始时间
         start_time = datetime.now()
@@ -448,7 +450,10 @@ class ElasticsearchDB(BaseVectorDB):
         # TODO: 这里result返回了很多额外信息, 后续可以用来做rerank，以及坐标展示等等
         contexts = []
         sum_tokens = 0
-        for _id in result.ids:
+        # 默认使用rerank
+        if rerank and os.getenv("RERANK_URL", ""):
+            self.rerank(input_query[0], result, discard_threshold=0.01, top_k=10)
+        for i, _id in enumerate(result.ids):
             context = result.field[_id]
             tokens_num = self.num_tokens_from_messages(context["content_with_weight"], model)
             sum_tokens += tokens_num
@@ -456,6 +461,9 @@ class ElasticsearchDB(BaseVectorDB):
             context["id"] = _id
             context["tokens_num"] = tokens_num
             context["knowledge_id"] = context["metadata"]["knowledge_id"]
+            context["score"] = result.scores[i]
+            if rerank and os.getenv("RERANK_URL", ""):
+                context["rerank_score"] = result.rerank_scores[i]
             del context["content_with_weight"]
             del context["content_ltks"]
             contexts.append(context)
@@ -712,8 +720,26 @@ class ElasticsearchDB(BaseVectorDB):
         self.client.delete_by_query(index=self._get_index(), body=query)
         self.client.indices.refresh(index=self._get_index())
 
-    def rerank(self):
-        ...
+    def rerank(self, query, docs, discard_threshold=0.01, top_k=10) -> None:
+        """
+        对搜索到的结果，进行rerank重排序，剔除置信度较低的结果
+        :param docs: 文档
+        :param discard_threshold: 丢弃阈值，置信度低于该值的结果将被丢弃
+        :param top_k: 保留的结果数量
+        """
+        rerank_url = os.getenv("RERANK_URL")
+        contents = []
+        for i, _id in enumerate(docs.ids):
+            contents.append(docs.field[_id]["content_with_weight"])
+        rerank_scores = requests.post(rerank_url, json={"question": query, "docs": contents}).json()["scores"]
+        combined_list = [(rerank_score, _id, score) for rerank_score, _id, score in zip(rerank_scores, docs.ids, docs.scores) if
+                         rerank_score >= discard_threshold]
+        combined_list.sort(key=lambda x: x[0], reverse=True)
+        if len(combined_list) > top_k:
+            combined_list = combined_list[:top_k]
+        rerank_scores, docs.ids, docs.scores = zip(*combined_list)
+        docs.rerank_scores = list(rerank_scores)
+
 
     def rerank_with_model(self):
         ...
