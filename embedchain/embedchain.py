@@ -611,6 +611,8 @@ class EmbedChain(JSONSerializable):
             knn_threshold: float = 0.3,
             match_threshold: float = 0.5,
             rerank: bool = True,
+            top_k: int = 10,
+            rerank_discard_threshold=0.01,
             **kwargs: dict[str, Any],
     ) -> Union[list[tuple[str, str, str]], list[str]]:
 
@@ -624,6 +626,8 @@ class EmbedChain(JSONSerializable):
             knn_threshold=knn_threshold,
             match_threshold=match_threshold,
             rerank=rerank,
+            top_k=top_k,
+            rerank_discard_threshold=rerank_discard_threshold,
             **kwargs
         )
         return contexts

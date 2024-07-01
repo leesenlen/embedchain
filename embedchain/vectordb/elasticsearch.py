@@ -437,16 +437,25 @@ class ElasticsearchDB(BaseVectorDB):
             model: str = 'gpt-3.5-turbo',
             knn_threshold: float = 0.3,
             match_threshold: float = 1,
-            rerank=True
+            rerank=True,
+            top_k: int = 10,
+            rerank_discard_threshold=0.01,
+            **kwargs,
     ) -> Union[list[tuple[str, dict]], list[str]]:
         # 起始时间
         start_time = datetime.now()
         # knn与关键字一起时加过滤条件需要都加上，只加在query里knn并不会生效
         input_query_vector = self.embedder.embedding_fn(input_query)
         logging.info(f"查询作向量化耗时：{(datetime.now() - start_time).total_seconds()}")
+        # 如果使用了rerank模型，可以多召回文档，再通过rerank去除置信度低的
+        if rerank:
+            retrieve__num = top_k * 3
+        else:
+            retrieve__num = top_k
         result = self.es_query_engine.search(input_query, and_conditions, self._get_index(), input_query_vector[0],
                                              **{"knn_threshold": knn_threshold, "match_threshold": match_threshold,
-                                                "top_k": 16, "match_weight": match_weight, "knn_weight": knn_weight})
+                                                "top_k": retrieve__num, "match_weight": match_weight,
+                                                "knn_weight": knn_weight})
         contexts = []
         sum_tokens = 0
         # 默认使用rerank
