@@ -438,7 +438,7 @@ class ElasticsearchDB(BaseVectorDB):
             knn_threshold: float = 0.3,
             match_threshold: float = 1,
             rerank=True,
-            top_k: int = 10,
+            top_k: int = 8,
             rerank_discard_threshold=0.01,
             **kwargs,
     ) -> Union[list[tuple[str, dict]], list[str]]:
@@ -449,7 +449,7 @@ class ElasticsearchDB(BaseVectorDB):
         logging.info(f"查询作向量化耗时：{(datetime.now() - start_time).total_seconds()}")
         # 如果使用了rerank模型，可以多召回文档，再通过rerank去除置信度低的
         if rerank:
-            retrieve__num = top_k * 3
+            retrieve__num = top_k * 5
         else:
             retrieve__num = top_k
         result = self.es_query_engine.search(input_query, and_conditions, self._get_index(), input_query_vector[0],
@@ -460,7 +460,7 @@ class ElasticsearchDB(BaseVectorDB):
         sum_tokens = 0
         # 默认使用rerank
         if rerank and os.getenv("RERANK_URL", ""):
-            self.rerank(input_query[0], result, discard_threshold=0.01, top_k=10)
+            self.rerank(input_query[0], result, discard_threshold=rerank_discard_threshold, top_k=top_k)
         for i, _id in enumerate(result.ids):
             context = result.field[_id]
             tokens_num = self.num_tokens_from_messages(context["content_with_weight"], model)
