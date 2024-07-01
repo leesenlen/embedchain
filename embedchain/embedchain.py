@@ -610,7 +610,7 @@ class EmbedChain(JSONSerializable):
             model: str = "gpt-3.5-turbo",
             knn_threshold: float = 0.3,
             match_threshold: float = 0.5,
-            rerank: bool = False,
+            rerank: bool = True,
             **kwargs: dict[str, Any],
     ) -> Union[list[tuple[str, str, str]], list[str]]:
 
