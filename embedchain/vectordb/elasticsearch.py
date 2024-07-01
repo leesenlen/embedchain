@@ -745,9 +745,9 @@ class ElasticsearchDB(BaseVectorDB):
         combined_list.sort(key=lambda x: x[0], reverse=True)
         if len(combined_list) > top_k:
             combined_list = combined_list[:top_k]
-        rerank_scores, docs.ids, docs.scores = zip(*combined_list)
-        docs.rerank_scores = list(rerank_scores)
+        if combined_list:
+            rerank_scores, docs.ids, docs.scores = zip(*combined_list)
+            docs.rerank_scores = list(rerank_scores)
+        else:
+            docs.ids, docs.rerank_scores, docs.scores = [], [], []
 
-
-    def rerank_with_model(self):
-        ...
