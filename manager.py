@@ -39,7 +39,7 @@ if __name__ == "__main__":
     import requests
     import pandas as pd
     test_queryes = ["绩效等级分为哪几个", "绩效等级有哪几个", "工牌丢了怎么办", "工牌补办要多少钱", "寻佑兰是哪个部门的", "当前是哪个版本，有什么新功能",
-                    "员工离职流程是怎样的", "驻外人员有什么福利", "外派人员怎么打卡"]
+                    "员工离职流程是怎样的", "驻外人员有什么福利", "外派人员怎么打卡", "境外外派补贴标准是什么"]
     # test_queryes = ["当前是哪个版本，有什么新功能"]
     df = pd.DataFrame(columns=['question', 'subject', 'origin_score', 'rerank_score', 'doc'])
     for query in test_queryes:
