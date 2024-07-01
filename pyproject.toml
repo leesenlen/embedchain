@@ -91,7 +91,7 @@ exclude = '''
 color = true
 
 [tool.poetry.dependencies]
-python = ">=3.9,<=3.13"
+python = ">=3.10,<3.12"
 python-dotenv = "^1.0.0"
 langchain = "^0.1.4"
 requests = "^2.31.0"
@@ -157,6 +157,20 @@ langchain-google-vertexai = { version = "^0.0.5", optional = true }
 sqlalchemy = "^1.4.51"
 alembic = "^1.13.1"
 
+xgboost = "2.0.3"
+pypdf2 = "3.0.1"
+datrie = "0.8.2"
+hanziconv = "0.3.2"
+pyclipper = "1.3.0.post5"
+oss2 = "^2.18.5"
+aspose-slides = "24.5"
+pdfplumber = "0.10.4"
+opencv-python = "4.9.0.80"
+nltk = "3.8.1"
+python-docx = "1.1.0"
+openpyxl = "3.1.2"
+elasticsearch-dsl = "^8.14.0"
+concurrent-log = "^1.0.1"
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"
 pre-commit = "^3.2.2"

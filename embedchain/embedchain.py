@@ -28,12 +28,12 @@ load_dotenv()
 
 class EmbedChain(JSONSerializable):
     def __init__(
-        self,
-        config: BaseAppConfig,
-        llm: BaseLlm,
-        db: BaseVectorDB = None,
-        embedder: BaseEmbedder = None,
-        system_prompt: Optional[str] = None,
+            self,
+            config: BaseAppConfig,
+            llm: BaseLlm,
+            db: BaseVectorDB = None,
+            embedder: BaseEmbedder = None,
+            system_prompt: Optional[str] = None,
     ):
         """
         Initializes the EmbedChain instance, sets up a vector DB client and
@@ -104,66 +104,66 @@ class EmbedChain(JSONSerializable):
         self.llm.online = value
 
     def _delete_by_query(
-        self,
-        conditions: dict):
-    
-        self.db._delete_by_query({"metadata."+field: value for field, value in conditions.items()})
+            self,
+            conditions: dict):
+
+        self.db._delete_by_query({"metadata." + field: value for field, value in conditions.items()})
 
     def _delete_by_id(self, id: str):
         self.db._delete_by_id(id)
 
-    def paged_query(self, 
-        and_conditions: dict[str, any],
-        page_number: int=1,
-        page_size: int=10):
+    def paged_query(self,
+                    and_conditions: dict[str, any],
+                    page_number: int = 1,
+                    page_size: int = 10):
         return self.db.paged_query(and_conditions, page_number, page_size)
 
     def publish_knowledge(
-        self,
-        knowledge_id: str
+            self,
+            knowledge_id: str
     ):
         """
         发布知识库
         """
         self.db.publish_knowledge({"metadata.knowledge_id": knowledge_id})
 
-    def enable_docs(self, doc_ids: list, status: int=1):
+    def enable_docs(self, doc_ids: list, status: int = 1):
         """
         关闭/开启文档
         """
-        self.db.enable_docs(doc_ids,status)  
+        self.db.enable_docs(doc_ids, status)
 
-    def enable_segment(self, segment_id: str, status: int=1):
+    def enable_segment(self, segment_id: str, status: int = 1):
         """
         关闭/开启文档片段
         """
-        self.db.enable_segment(segment_id,status)
+        self.db.enable_segment(segment_id, status)
 
-    def upsert_document(self, document: str,id: str = None, 
+    def upsert_document(self, document: str, id: str = None,
                         metadata: dict = {}):
-        return self.db.upsert_document(document,id,metadata)
+        return self.db.upsert_document(document, id, metadata)
 
     def upsert(
-        self,
-        source: Any,
-        data_type: Optional[DataType] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        config: Optional[AddConfig] = None,
-        loader: Optional[BaseLoader] = None,
-        chunker: Optional[BaseChunker] = None):
+            self,
+            source: Any,
+            data_type: Optional[DataType] = None,
+            metadata: Optional[dict[str, Any]] = None,
+            config: Optional[AddConfig] = None,
+            loader: Optional[BaseLoader] = None,
+            chunker: Optional[BaseChunker] = None):
         if config is not None:
             pass
         elif self.chunker is not None:
             config = AddConfig(chunker=self.chunker)
         else:
             config = AddConfig()
-
         if data_type:
             try:
                 data_type = DataType(data_type)
             except ValueError:
                 logging.info(
-                    f"Invalid data_type: '{data_type}', using `custom` instead.\n Check docs to pass the valid data type: `https://docs.embedchain.ai/data-sources/overview`"  # noqa: E501
+                    f"Invalid data_type: '{data_type}', using `custom` instead.\n Check docs to pass the valid data type: `https://docs.embedchain.ai/data-sources/overview`"
+                    # noqa: E501
                 )
                 data_type = DataType.CUSTOM
 
@@ -171,13 +171,15 @@ class EmbedChain(JSONSerializable):
             data_type = detect_datatype(source)
 
         data_formatter = DataFormatter(data_type, config, loader, chunker)
-
+        metadata["data_type"] = data_type.value
         embeddings_data = data_formatter.chunker.chunks(data_formatter.loader, source, metadata, config=config.chunker)
         # spread chunking results
         documents = embeddings_data["documents"]
         metadatas = embeddings_data["metadatas"]
         ids = embeddings_data["ids"]
         embeddings = embeddings_data.get("embeddings")
+        # 其他信息
+        extra_data = embeddings_data.get("extra_data", None)
 
         new_metadatas = []
         for m in metadatas:
@@ -194,18 +196,18 @@ class EmbedChain(JSONSerializable):
             documents=documents,
             metadatas=metadatas,
             ids=ids,
+            extra_data=extra_data
         )
         return embeddings_data["doc_id"]
-    
 
     def upsert_structure(
-        self,
-        source: Any,
-        data_type: Optional[DataType] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        config: Optional[AddConfig] = None,
-        loader: Optional[BaseLoader] = None,
-        chunker: Optional[BaseChunker] = None):
+            self,
+            source: Any,
+            data_type: Optional[DataType] = None,
+            metadata: Optional[dict[str, Any]] = None,
+            config: Optional[AddConfig] = None,
+            loader: Optional[BaseLoader] = None,
+            chunker: Optional[BaseChunker] = None):
         """
         Only supports structure data types.
         """
@@ -223,7 +225,8 @@ class EmbedChain(JSONSerializable):
                 data_type = DataType(data_type)
             except ValueError:
                 logging.info(
-                    f"Invalid data_type: '{data_type}', using `custom` instead.\n Check docs to pass the valid data type: `https://docs.embedchain.ai/data-sources/overview`"  # noqa: E501
+                    f"Invalid data_type: '{data_type}', using `custom` instead.\n Check docs to pass the valid data type: `https://docs.embedchain.ai/data-sources/overview`"
+                    # noqa: E501
                 )
                 data_type = DataType.CUSTOM
 
@@ -235,7 +238,7 @@ class EmbedChain(JSONSerializable):
         metadatas = embeddings_data["metadata"]
         ids = embeddings_data["id"]
         embeddings = embeddings_data.get("embeddings")
-        
+
         # Note: Metadata is the function argument
         if metadata:
             # Spread whatever is in metadata into the new object.
@@ -251,15 +254,15 @@ class EmbedChain(JSONSerializable):
         return embeddings_data["doc_id"]
 
     def add(
-        self,
-        source: Any,
-        data_type: Optional[DataType] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        config: Optional[AddConfig] = None,
-        dry_run=False,
-        loader: Optional[BaseLoader] = None,
-        chunker: Optional[BaseChunker] = None,
-        **kwargs: Optional[dict[str, Any]],
+            self,
+            source: Any,
+            data_type: Optional[DataType] = None,
+            metadata: Optional[dict[str, Any]] = None,
+            config: Optional[AddConfig] = None,
+            dry_run=False,
+            loader: Optional[BaseLoader] = None,
+            chunker: Optional[BaseChunker] = None,
+            **kwargs: Optional[dict[str, Any]],
     ):
         """
         Adds the data from the given URL to the vector db.
@@ -291,10 +294,12 @@ class EmbedChain(JSONSerializable):
         try:
             DataType(source)
             logging.warning(
-                f"""Starting from version v0.0.40, Embedchain can automatically detect the data type. So, in the `add` method, the argument order has changed. You no longer need to specify '{source}' for the `source` argument. So the code snippet will be `.add("{data_type}", "{source}")`"""  # noqa #E501
+                f"""Starting from version v0.0.40, Embedchain can automatically detect the data type. So, in the `add` method, the argument order has changed. You no longer need to specify '{source}' for the `source` argument. So the code snippet will be `.add("{data_type}", "{source}")`"""
+                # noqa #E501
             )
             logging.warning(
-                "Embedchain is swapping the arguments for you. This functionality might be deprecated in the future, so please adjust your code."  # noqa #E501
+                "Embedchain is swapping the arguments for you. This functionality might be deprecated in the future, so please adjust your code."
+                # noqa #E501
             )
             source, data_type = data_type, source
         except ValueError:
@@ -305,7 +310,8 @@ class EmbedChain(JSONSerializable):
                 data_type = DataType(data_type)
             except ValueError:
                 logging.info(
-                    f"Invalid data_type: '{data_type}', using `custom` instead.\n Check docs to pass the valid data type: `https://docs.embedchain.ai/data-sources/overview`"  # noqa: E501
+                    f"Invalid data_type: '{data_type}', using `custom` instead.\n Check docs to pass the valid data type: `https://docs.embedchain.ai/data-sources/overview`"
+                    # noqa: E501
                 )
                 data_type = DataType.CUSTOM
 
@@ -420,15 +426,15 @@ class EmbedChain(JSONSerializable):
             )
 
     def _load_and_embed(
-        self,
-        loader: BaseLoader,
-        chunker: BaseChunker,
-        src: Any,
-        metadata: Optional[dict[str, Any]] = None,
-        source_hash: Optional[str] = None,
-        add_config: Optional[AddConfig] = None,
-        dry_run=False,
-        **kwargs: Optional[dict[str, Any]],
+            self,
+            loader: BaseLoader,
+            chunker: BaseChunker,
+            src: Any,
+            metadata: Optional[dict[str, Any]] = None,
+            source_hash: Optional[str] = None,
+            add_config: Optional[AddConfig] = None,
+            dry_run=False,
+            **kwargs: Optional[dict[str, Any]],
     ):
         """
         Loads the data from the given URL, chunks it, and adds it to database.
@@ -524,7 +530,7 @@ class EmbedChain(JSONSerializable):
 
         # Chunk documents into batches of 2048 and handle each batch
         # helps wigth large loads of embeddings  that hit OpenAI limits
-        document_batches = [documents[i : i + 2048] for i in range(0, len(documents), 2048)]
+        document_batches = [documents[i: i + 2048] for i in range(0, len(documents), 2048)]
         for batch in document_batches:
             try:
                 # Add only valid batches
@@ -552,12 +558,12 @@ class EmbedChain(JSONSerializable):
         ]
 
     def _retrieve_from_database(
-        self,
-        input_query: str,
-        config: Optional[BaseLlmConfig] = None,
-        where=None,
-        citations: bool = False,
-        **kwargs: Optional[dict[str, Any]],
+            self,
+            input_query: str,
+            config: Optional[BaseLlmConfig] = None,
+            where=None,
+            citations: bool = False,
+            **kwargs: Optional[dict[str, Any]],
     ) -> Union[list[tuple[str, str, str]], list[str]]:
         """
         Queries the vector database based on the given input query.
@@ -595,13 +601,19 @@ class EmbedChain(JSONSerializable):
         return contexts
 
     def multi_field_match_query(
-        self,
-        input_query: str,
-        and_conditions: Optional[dict[str, any]] = None,
-        match_weight: float = 0.5,
-        knn_weight: float = 0.5,
-        knowledge_tokens: int = 6000,
-        model: str="gpt-3.5-turbo"
+            self,
+            input_query: str,
+            and_conditions: Optional[dict[str, any]] = None,
+            match_weight: float = 0.5,
+            knn_weight: float = 0.5,
+            knowledge_tokens: int = 6000,
+            model: str = "gpt-3.5-turbo",
+            knn_threshold: float = 0.3,
+            match_threshold: float = 0.5,
+            rerank: bool = True,
+            top_k: int = 10,
+            rerank_discard_threshold=0.01,
+            **kwargs: dict[str, Any],
     ) -> Union[list[tuple[str, str, str]], list[str]]:
 
         contexts = self.db.multi_field_match_query(
@@ -610,18 +622,24 @@ class EmbedChain(JSONSerializable):
             match_weight=match_weight,
             knn_weight=knn_weight,
             knowledge_tokens=knowledge_tokens,
-            model=model
+            model=model,
+            knn_threshold=knn_threshold,
+            match_threshold=match_threshold,
+            rerank=rerank,
+            top_k=top_k,
+            rerank_discard_threshold=rerank_discard_threshold,
+            **kwargs
         )
         return contexts
 
     def query(
-        self,
-        input_query: str,
-        config: BaseLlmConfig = None,
-        dry_run=False,
-        where: Optional[dict] = None,
-        citations: bool = False,
-        **kwargs: dict[str, Any],
+            self,
+            input_query: str,
+            config: BaseLlmConfig = None,
+            dry_run=False,
+            where: Optional[dict] = None,
+            citations: bool = False,
+            **kwargs: dict[str, Any],
     ) -> Union[tuple[str, list[tuple[str, dict]]], str]:
         """
         Queries the vector database based on the given input query.
@@ -680,14 +698,14 @@ class EmbedChain(JSONSerializable):
             return answer
 
     def chat(
-        self,
-        input_query: str,
-        config: Optional[BaseLlmConfig] = None,
-        dry_run=False,
-        session_id: str = "default",
-        where: Optional[dict[str, str]] = None,
-        citations: bool = False,
-        **kwargs: dict[str, Any],
+            self,
+            input_query: str,
+            config: Optional[BaseLlmConfig] = None,
+            dry_run=False,
+            session_id: str = "default",
+            where: Optional[dict[str, str]] = None,
+            citations: bool = False,
+            **kwargs: dict[str, Any],
     ) -> Union[tuple[str, list[tuple[str, dict]]], str]:
         """
         Queries the vector database on the given input query.
@@ -824,11 +842,11 @@ class EmbedChain(JSONSerializable):
         self.telemetry.capture(event_name="reset", properties=self._telemetry_props)
 
     def get_history(
-        self,
-        num_rounds: int = 10,
-        display_format: bool = True,
-        session_id: Optional[str] = "default",
-        fetch_all: bool = False,
+            self,
+            num_rounds: int = 10,
+            display_format: bool = True,
+            session_id: Optional[str] = "default",
+            fetch_all: bool = False,
     ):
         history = self.llm.memory.get(
             app_id=self.config.id,

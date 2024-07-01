@@ -23,7 +23,7 @@ embedder:
 vectordb:
   provider: elasticsearch
   config:
-    collection_name: 'aiagent_vectordb'
+    collection_name: 'sailvan_test'
     es_url: http://10.199.1.77:9200
     basic_auth:
       - elastic
@@ -31,7 +31,7 @@ vectordb:
     verify_certs: false
 
 chunker:
-  chunk_size: 2000
-  chunk_overlap: 30
+  chunk_size: 1000
+  chunk_overlap: 10
   length_function: 'len'
-  min_chunk_size: 30
+  min_chunk_size: 10

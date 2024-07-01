@@ -315,7 +315,7 @@ def detect_datatype(source: Any) -> DataType:
             logging.debug(f"Source of `{formatted_source}` detected as `docx`.")
             return DataType.DOCX
         
-        if url.path.endswith(".doc"):
+        if source.endswith(".doc"):
             logging.debug(f"Source of `{formatted_source}` detected as `doc`.")
             return DataType.DOC
 

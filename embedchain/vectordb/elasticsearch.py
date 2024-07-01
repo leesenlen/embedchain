@@ -1,5 +1,8 @@
 import logging
+import requests
+import os
 from typing import Any, Optional, Union
+from embedchain.rag.nlp.search import ESQueryBuilder
 
 try:
     from elasticsearch import Elasticsearch
@@ -13,11 +16,11 @@ from embedchain.config import ElasticsearchDBConfig
 from embedchain.helpers.json_serializable import register_deserializable
 from embedchain.utils.misc import chunks
 from embedchain.vectordb.base import BaseVectorDB
+from embedchain.rag.nlp.query import EsQueryer
 import tiktoken
 from datetime import datetime
 import hashlib
-import diskcache as dc
-import os
+
 
 @register_deserializable
 class ElasticsearchDB(BaseVectorDB):
@@ -27,12 +30,10 @@ class ElasticsearchDB(BaseVectorDB):
 
     BATCH_SIZE = 50
 
-    cache = dc.Cache(os.path.abspath(os.getenv('CACHE_PATH', '/data/aiagent/cache')), size_limit=100 * 1024**2, cull_limit=100)
-
     def __init__(
-        self,
-        config: Optional[ElasticsearchDBConfig] = None,
-        es_config: Optional[ElasticsearchDBConfig] = None,  # Backwards compatibility
+            self,
+            config: Optional[ElasticsearchDBConfig] = None,
+            es_config: Optional[ElasticsearchDBConfig] = None,  # Backwards compatibility
     ):
         """Elasticsearch as vector database.
 
@@ -58,9 +59,10 @@ class ElasticsearchDB(BaseVectorDB):
             self.client = Elasticsearch(cloud_id=self.config.CLOUD_ID, **self.config.ES_EXTRA_PARAMS)
         else:
             raise ValueError(
-                "Something is wrong with your config. Please check again - `https://docs.embedchain.ai/components/vector-databases#elasticsearch`"  # noqa: E501
+                "Something is wrong with your config. Please check again - `https://docs.embedchain.ai/components/vector-databases#elasticsearch`"
+                # noqa: E501
             )
-
+        self.es_query_engine = ESQueryBuilder(self.client)
         # Call parent init here because embedder is needed
         super().__init__(config=self.config)
 
@@ -125,11 +127,11 @@ class ElasticsearchDB(BaseVectorDB):
         return result
 
     def add(
-        self,
-        documents: list[str],
-        metadatas: list[object],
-        ids: list[str],
-        **kwargs: Optional[dict[str, any]],
+            self,
+            documents: list[str],
+            metadatas: list[object],
+            ids: list[str],
+            **kwargs: Optional[dict[str, any]],
     ) -> Any:
         """
         add data in vector database
@@ -144,7 +146,8 @@ class ElasticsearchDB(BaseVectorDB):
         embeddings = self.embedder.embedding_fn(documents)
 
         for chunk in chunks(
-            list(zip(ids, documents, metadatas, embeddings)), self.BATCH_SIZE, desc="Inserting batches in elasticsearch"
+                list(zip(ids, documents, metadatas, embeddings)), self.BATCH_SIZE,
+                desc="Inserting batches in elasticsearch"
         ):  # noqa: E501
             ids, docs, metadatas, embeddings = [], [], [], []
             for id, text, metadata, embedding in chunk:
@@ -170,42 +173,47 @@ class ElasticsearchDB(BaseVectorDB):
         将列表按照指定大小切分为二维数组
         """
         return [input_list[i:i + chunk_size] for i in range(0, len(input_list), chunk_size)]
-    
+
     def upsert(
-        self,
-        embeddings: list[list[float]],
-        documents: list[str],
-        metadatas: list[object],
-        ids: list[str],
-        **kwargs: Optional[dict[str, any]],
+            self,
+            embeddings: list[list[float]],
+            documents: list[str],
+            metadatas: list[object],
+            ids: list[str],
+            extra_data=None,
+            **kwargs: Optional[dict[str, any]],
     ) -> Any:
+        if not extra_data:
+            extra_data = [] * len(ids)
         documents_list = self.split_list(documents, self.BATCH_SIZE)
         embeddings_list = []
         for documents_chunk in documents_list:
             embeddings_chunk = self.embedder.embedding_fn(documents_chunk)
             embeddings_list.append(embeddings_chunk)
-        
+
         embeddings = [item for sublist in embeddings_list for item in sublist]
 
         for chunk in chunks(
-            list(zip(ids, documents, metadatas, embeddings)), self.BATCH_SIZE, desc="Inserting batches in elasticsearch"
+                list(zip(ids, documents, metadatas, embeddings, extra_data)), self.BATCH_SIZE,
+                desc="Inserting batches in elasticsearch"
         ):  # noqa: E501
-            ids, docs, metadatas, embeddings = [], [], [], []
-            for id, text, metadata, embedding in chunk:
+            ids, docs, metadatas, embeddings, extra_datas = [], [], [], [], []
+            for id, text, metadata, embedding, extra in chunk:
                 ids.append(id)
                 docs.append(text)
                 metadatas.append(metadata)
                 embeddings.append(embedding)
+                extra_datas.append(extra)
 
             batch_docs = []
-            for id, text, metadata, embedding in zip(ids, docs, metadatas, embeddings):
+            for id, text, metadata, embedding, extra in zip(ids, docs, metadatas, embeddings, extra_datas):
                 metadata['tokens_num'] = self.num_tokens_from_string(text, "cl100k_base")
                 batch_docs.append(
                     {
                         "_index": self._get_index(),
                         "_id": id,
                         "_op_type": "update",
-                        "doc": {"text": text, "metadata": metadata, "embeddings": embedding},
+                        "doc": {"text": text, "metadata": metadata, "embeddings": embedding, **extra},
                         "doc_as_upsert": True
                     }
                 )
@@ -213,19 +221,19 @@ class ElasticsearchDB(BaseVectorDB):
         self.client.indices.refresh(index=self._get_index())
 
     def upsert_structure(
-        self,
-        embedding: list[float],
-        document: str,
-        metadata: object,
-        id: str,
-        is_deleted: bool,
-        **kwargs: Optional[dict[str, any]],
-    ) -> Any:  
+            self,
+            embedding: list[float],
+            document: str,
+            metadata: object,
+            id: str,
+            is_deleted: bool,
+            **kwargs: Optional[dict[str, any]],
+    ) -> Any:
         result = self.check_if_exist(id)
         if result and is_deleted:
             self.client.delete(index=self._get_index(), id=id)
         else:
-            if not is_deleted:  
+            if not is_deleted:
                 embedding = self.embedder.embedding_fn([document])
                 metadata['tokens_num'] = self.num_tokens_from_string(document, "cl100k_base")
                 batch_docs = []
@@ -241,7 +249,7 @@ class ElasticsearchDB(BaseVectorDB):
                 bulk(self.client, batch_docs)
         self.client.indices.refresh(index=self._get_index())
 
-    def upsert_document(self, document: str,id: str = None, 
+    def upsert_document(self, document: str, id: str = None,
                         metadata: dict = {}):
         hash = hashlib.sha256(document.encode()).hexdigest()
         embedding = self.embedder.embedding_fn([document])
@@ -249,14 +257,14 @@ class ElasticsearchDB(BaseVectorDB):
             if "doc_id" in metadata:
                 id = metadata['doc_id'] + "-" + hash
             else:
-                id = str(metadata['knowledge_id'] ) + "-" + hash
+                id = str(metadata['knowledge_id']) + "-" + hash
                 metadata['doc_id'] = id
                 metadata['hash'] = hash
         else:
-            response = self.client.get(index=self._get_index(), id=id)    
-            metadata = response["_source"]["metadata"]    
-        
-        metadata['tokens_num'] = self.num_tokens_from_string(document, "cl100k_base")     
+            response = self.client.get(index=self._get_index(), id=id)
+            metadata = response["_source"]["metadata"]
+
+        metadata['tokens_num'] = self.num_tokens_from_string(document, "cl100k_base")
         update_body = {
             "doc": {"text": document, "metadata": metadata, "embeddings": embedding[0]},
             "doc_as_upsert": True  # 如果文档不存在则插入
@@ -311,7 +319,7 @@ class ElasticsearchDB(BaseVectorDB):
         self.client.update_by_query(index=self._get_index(), body=query)
         self.client.indices.refresh(index=self._get_index())
 
-    def enable_docs(self, doc_ids: list,status: int=1):
+    def enable_docs(self, doc_ids: list, status: int = 1):
         query = {
             "query": {
                 "terms": {
@@ -329,7 +337,7 @@ class ElasticsearchDB(BaseVectorDB):
         self.client.update_by_query(index=self._get_index(), body=query)
         self.client.indices.refresh(index=self._get_index())
 
-    def enable_segment(self, segment_id: str, status: int=1):
+    def enable_segment(self, segment_id: str, status: int = 1):
         update_body = {
             "doc": {
                 "metadata": {
@@ -343,8 +351,8 @@ class ElasticsearchDB(BaseVectorDB):
         self.client.indices.refresh(index=self._get_index())
 
     def _delete_by_query(
-        self,
-        conditions: dict    
+            self,
+            conditions: dict
     ):
         query = {"query": {"bool": {"must": []}}}
         for key, value in conditions.items():
@@ -356,10 +364,10 @@ class ElasticsearchDB(BaseVectorDB):
         self.client.delete(index=self._get_index(), id=id)
         self.client.indices.refresh(index=self._get_index())
 
-    def paged_query(self, 
-        and_conditions: dict[str, any],
-        page_number: int=1,
-        page_size: int=10):
+    def paged_query(self,
+                    and_conditions: dict[str, any],
+                    page_number: int = 1,
+                    page_size: int = 10):
         """
         分页查询
         """
@@ -388,7 +396,8 @@ class ElasticsearchDB(BaseVectorDB):
         for doc in docs:
             context = doc["_source"]["text"]
             segment_id = doc["_id"]
-            knowledge_id = doc["_source"]["metadata"]["knowledge_id"] if "knowledge_id" in doc["_source"]["metadata"] else 0
+            knowledge_id = doc["_source"]["metadata"]["knowledge_id"] if "knowledge_id" in doc["_source"][
+                "metadata"] else 0
             app_id = doc["_source"]["metadata"]["app_id"] if "app_id" in doc["_source"]["metadata"] else 0
             vecotr_doc_id = doc["_source"]["metadata"]["doc_id"] if "doc_id" in doc["_source"]["metadata"] else ''
             status = doc["_source"]["metadata"]["status"] if "status" in doc["_source"]["metadata"] else 0
@@ -416,71 +425,93 @@ class ElasticsearchDB(BaseVectorDB):
                 'text': context
             }
             contexts.append(map)
-        return {'items':contexts,'page':page_number,'page_size':page_size,'total':total_count}
-
-    def custom_cache_key(self, input_query, model='text-embedding-3-large'):
-        func_name = 'query_cache'
-        key = (func_name, tuple(input_query), model)
-        return hashlib.md5(str(key).encode()).hexdigest()
-    
-    def query_cache(self, input_query: list[str], model='text-embedding-3-large'):
-        # 生成缓存键
-        cache_key = self.custom_cache_key(input_query, model)
-        
-        # 检查缓存中是否存在结果
-        if cache_key in self.cache:
-            return self.cache[cache_key]
-        # 计算结果并缓存
-        result = self.embedder.embedding_fn(input_query)
-        self.cache.set(cache_key, result, expire=60)
-        return result
+        return {'items': contexts, 'page': page_number, 'page_size': page_size, 'total': total_count}
 
     def multi_field_match_query(
-        self,
-        input_query: list[str],
-        and_conditions: dict[str, any],
-        match_weight: float = 0.5,
-        knn_weight: float = 0.5,
-        knowledge_tokens: int = 6000,
-        model: str='gpt-3.5-turbo'
+            self,
+            input_query: list[str],
+            and_conditions: dict[str, any],
+            match_weight: float = 0.05,
+            knn_weight: float = 0.5,
+            knowledge_tokens: int = 6000,
+            model: str = 'gpt-3.5-turbo',
+            knn_threshold: float = 0.3,
+            match_threshold: float = 1,
+            rerank=True,
+            top_k: int = 10,
+            rerank_discard_threshold=0.01,
+            **kwargs,
     ) -> Union[list[tuple[str, dict]], list[str]]:
         # 起始时间
         start_time = datetime.now()
         # knn与关键字一起时加过滤条件需要都加上，只加在query里knn并不会生效
-        input_query_vector = self.query_cache(input_query)
+        input_query_vector = self.embedder.embedding_fn(input_query)
         logging.info(f"查询作向量化耗时：{(datetime.now() - start_time).total_seconds()}")
-        query_vector = input_query_vector[0]
-        _source = ["text", "metadata"]
-        if match_weight == 1 and knn_weight == 0:
-            contexts = self.match_query(input_query[0],_source,and_conditions, match_weight,model)
-            logging.info(f"关键字搜索耗时：{(datetime.now() - start_time).total_seconds()}")
-        elif match_weight == 0 and knn_weight == 1:
-            contexts = self.knn_query(query_vector, _source, and_conditions, knn_weight,model)
-            logging.info(f"knn语义搜索耗时：{(datetime.now() - start_time).total_seconds()}")
+        # 如果使用了rerank模型，可以多召回文档，再通过rerank去除置信度低的
+        if rerank:
+            retrieve__num = top_k * 3
         else:
-            match_contexts = self.match_query(input_query[0], _source, and_conditions, match_weight,model)
-            logging.info(f"关键字搜索耗时：{(datetime.now() - start_time).total_seconds()}")
-            knn_contexts = self.knn_query(query_vector, _source, and_conditions, knn_weight,model)
-            logging.info(f"knn语义搜索耗时：{(datetime.now() - start_time).total_seconds()}")
-            contexts = self.reciprocal_rank_fusion(match_contexts, knn_contexts)
-            logging.info(f"混合搜索耗时：{(datetime.now() - start_time).total_seconds()}")
-            
-        # token计数不能超过knowledge_tokens，默认6000
-        # es获取的文档个数不能超过10
-        max_size = 10
+            retrieve__num = top_k
+        result = self.es_query_engine.search(input_query, and_conditions, self._get_index(), input_query_vector[0],
+                                             **{"knn_threshold": knn_threshold, "match_threshold": match_threshold,
+                                                "top_k": retrieve__num, "match_weight": match_weight,
+                                                "knn_weight": knn_weight})
+        contexts = []
         sum_tokens = 0
-        size = 0
-        for context in contexts:
-            sum_tokens += context["tokens_num"]
-            size += 1
-            if size > max_size:
-                size -= 1
-                break
+        # 默认使用rerank
+        if rerank and os.getenv("RERANK_URL", ""):
+            self.rerank(input_query[0], result, discard_threshold=0.01, top_k=10)
+        for i, _id in enumerate(result.ids):
+            context = result.field[_id]
+            tokens_num = self.num_tokens_from_messages(context["content_with_weight"], model)
+            sum_tokens += tokens_num
+            context["context"] = context["content_with_weight"]
+            context["id"] = _id
+            context["tokens_num"] = tokens_num
+            context["knowledge_id"] = context["metadata"]["knowledge_id"]
+            context["score"] = result.scores[i]
+            if rerank and os.getenv("RERANK_URL", ""):
+                context["rerank_score"] = result.rerank_scores[i]
+            del context["content_with_weight"]
+            del context["content_ltks"]
+            contexts.append(context)
             if sum_tokens > knowledge_tokens:
-                size -= 1
                 break
+        return contexts
 
-        return contexts[:size]
+        # 旧版rag
+        # query_vector = input_query_vector[0]
+        # _source = ["text", "metadata"]
+        # if match_weight == 1 and knn_weight == 0:
+        #     contexts = self.match_query(input_query[0], _source, and_conditions, match_weight, model)
+        #     logging.info(f"关键字搜索耗时：{(datetime.now() - start_time).total_seconds()}")
+        # elif match_weight == 0 and knn_weight == 1:
+        #     contexts = self.knn_query(query_vector, _source, and_conditions, knn_weight, model)
+        #     logging.info(f"knn语义搜索耗时：{(datetime.now() - start_time).total_seconds()}")
+        # else:
+        #     match_contexts = self.match_query(input_query[0], _source, and_conditions, match_weight, model)
+        #     logging.info(f"关键字搜索耗时：{(datetime.now() - start_time).total_seconds()}")
+        #     knn_contexts = self.knn_query(query_vector, _source, and_conditions, knn_weight, model)
+        #     logging.info(f"knn语义搜索耗时：{(datetime.now() - start_time).total_seconds()}")
+        #     contexts = self.reciprocal_rank_fusion(match_contexts, knn_contexts)
+        #     logging.info(f"混合搜索耗时：{(datetime.now() - start_time).total_seconds()}")
+        #
+        # # token计数不能超过knowledge_tokens，默认6000
+        # # es获取的文档个数不能超过10
+        # max_size = 10
+        # sum_tokens = 0
+        # size = 0
+        # for context in contexts:
+        #     sum_tokens += context["tokens_num"]
+        #     size += 1
+        #     if size > max_size:
+        #         size -= 1
+        #         break
+        #     if sum_tokens > knowledge_tokens:
+        #         size -= 1
+        #         break
+        #
+        # return contexts[:size]
 
     def reciprocal_rank_fusion(self, match_contexts, knn_contexts):
         """
@@ -500,10 +531,10 @@ class ElasticsearchDB(BaseVectorDB):
         return sorted_list
 
     def match_query(self, input_query: str,
-        _source: list[str],
-        and_conditions: dict[str, any],
-        match_weight: float,
-        model: str):
+                    _source: list[str],
+                    and_conditions: dict[str, any],
+                    match_weight: float,
+                    model: str):
         """
         关键字搜索
         """
@@ -523,21 +554,21 @@ class ElasticsearchDB(BaseVectorDB):
         for doc in docs:
             context = doc["_source"]["text"]
             id = doc["_id"]
-            knowledge_id = doc["_source"]["metadata"]["knowledge_id"] if "knowledge_id" in doc["_source"]["metadata"] else 0
-            doc_id = doc["_source"]["metadata"]["system_doc_id"] if "system_doc_id" in doc["_source"]["metadata"] else 0
-            tokens_num = self.num_tokens_from_messages(context,model)
+            knowledge_id = doc["_source"]["metadata"]["knowledge_id"] if "knowledge_id" in doc["_source"][
+                "metadata"] else 0
+            tokens_num = self.num_tokens_from_messages(context, model)
             # link = ""
             # if "link" in doc["_source"]["metadata"] and doc["_source"]["metadata"]["link"] != "":
             #     link = "\n\n引用来源链接地址：" + doc["_source"]["metadata"]["link"]
-            map = {"context":context,"id":id,"knowledge_id":knowledge_id,"tokens_num":tokens_num,"doc_id":doc_id}
+            map = {"context": context, "id": id, "knowledge_id": knowledge_id, "tokens_num": tokens_num}
             contexts.append(map)
         return contexts
 
-    def knn_query(self,query_vector,
-        _source: list[str],
-        and_conditions: dict[str, any],
-        knn_weight: float,
-        model: str):
+    def knn_query(self, query_vector,
+                  _source: list[str],
+                  and_conditions: dict[str, any],
+                  knn_weight: float,
+                  model: str):
         """
         knn搜索
         """
@@ -564,13 +595,13 @@ class ElasticsearchDB(BaseVectorDB):
         for doc in docs:
             context = doc["_source"]["text"]
             id = doc["_id"]
-            knowledge_id = doc["_source"]["metadata"]["knowledge_id"] if "knowledge_id" in doc["_source"]["metadata"] else 0
-            doc_id = doc["_source"]["metadata"]["system_doc_id"] if "system_doc_id" in doc["_source"]["metadata"] else 0
+            knowledge_id = doc["_source"]["metadata"]["knowledge_id"] if "knowledge_id" in doc["_source"][
+                "metadata"] else 0
             tokens_num = self.num_tokens_from_messages(context, model)
             # link = ""
             # if "link" in doc["_source"]["metadata"] and doc["_source"]["metadata"]["link"] != "":
             #     link = "\n\n引用来源链接地址：" + doc["_source"]["metadata"]["link"]
-            map = {"context": context, "id": id, "knowledge_id": knowledge_id, "tokens_num": tokens_num,"doc_id":doc_id}
+            map = {"context": context, "id": id, "knowledge_id": knowledge_id, "tokens_num": tokens_num}
             contexts.append(map)
         return contexts
 
@@ -585,16 +616,17 @@ class ElasticsearchDB(BaseVectorDB):
         try:
             encoding = tiktoken.encoding_for_model(model)
         except KeyError:
+            print("Warning: model not found. Using cl100k_base encoding.")
             encoding = tiktoken.get_encoding("cl100k_base")
         return len(encoding.encode(messages))
 
     def query(
-        self,
-        input_query: list[str],
-        n_results: int,
-        where: dict[str, any],
-        citations: bool = False,
-        **kwargs: Optional[dict[str, Any]],
+            self,
+            input_query: list[str],
+            n_results: int,
+            where: dict[str, any],
+            citations: bool = False,
+            **kwargs: Optional[dict[str, Any]],
     ) -> Union[list[tuple[str, dict]], list[str]]:
         """
         query contents from vector database based on vector similarity
@@ -626,7 +658,8 @@ class ElasticsearchDB(BaseVectorDB):
             }
         }
         if where is not None:
-            query["script_score"]["query"] = {"bool": {"must": [{"match": {field: value} for field, value in where.items()}]}}
+            query["script_score"]["query"] = {
+                "bool": {"must": [{"match": {field: value} for field, value in where.items()}]}}
         # if "app_id" in where:
         #     app_id = where["app_id"]
         #     query["script_score"]["query"] = {"match": {"metadata.app_id": app_id}}
@@ -642,7 +675,7 @@ class ElasticsearchDB(BaseVectorDB):
                 contexts.append(tuple((context, metadata)))
             else:
                 contexts.append(context)
-                
+
         return contexts
 
     def set_collection_name(self, name: str):
@@ -694,3 +727,27 @@ class ElasticsearchDB(BaseVectorDB):
             query["query"]["bool"]["must"].append({"term": {f"metadata.{key}.keyword": value}})
         self.client.delete_by_query(index=self._get_index(), body=query)
         self.client.indices.refresh(index=self._get_index())
+
+    def rerank(self, query, docs, discard_threshold=0.01, top_k=10) -> None:
+        """
+        对搜索到的结果，进行rerank重排序，剔除置信度较低的结果
+        :param docs: 文档
+        :param discard_threshold: 丢弃阈值，置信度低于该值的结果将被丢弃
+        :param top_k: 保留的结果数量
+        """
+        rerank_url = os.getenv("RERANK_URL")
+        contents = []
+        for i, _id in enumerate(docs.ids):
+            contents.append(docs.field[_id]["content_with_weight"])
+        rerank_scores = requests.post(rerank_url, json={"question": query, "docs": contents}).json()["scores"]
+        combined_list = [(rerank_score, _id, score) for rerank_score, _id, score in zip(rerank_scores, docs.ids, docs.scores) if
+                         rerank_score >= discard_threshold]
+        combined_list.sort(key=lambda x: x[0], reverse=True)
+        if len(combined_list) > top_k:
+            combined_list = combined_list[:top_k]
+        rerank_scores, docs.ids, docs.scores = zip(*combined_list)
+        docs.rerank_scores = list(rerank_scores)
+
+
+    def rerank_with_model(self):
+        ...
