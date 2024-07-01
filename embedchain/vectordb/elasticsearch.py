@@ -447,7 +447,6 @@ class ElasticsearchDB(BaseVectorDB):
         result = self.es_query_engine.search(input_query, and_conditions, self._get_index(), input_query_vector[0],
                                              **{"knn_threshold": knn_threshold, "match_threshold": match_threshold,
                                                 "top_k": 16, "match_weight": match_weight, "knn_weight": knn_weight})
-        # TODO: 这里result返回了很多额外信息, 后续可以用来做rerank，以及坐标展示等等
         contexts = []
         sum_tokens = 0
         # 默认使用rerank
