@@ -77,6 +77,7 @@ class PdfFileChunker(BaseChunker, PdfParser):
             ck["create_timestamp_flt"] = datetime.datetime.now().timestamp()
         doc_id = self.generate_doc_id(app_id, "".join(each["content_with_weight"] for each in cks))
         metadatas = []
+        extra_data = []
         for number, ck in enumerate(cks):
             if ck.get("image"):
                 # TODO 图片存储
@@ -85,7 +86,6 @@ class PdfFileChunker(BaseChunker, PdfParser):
             chunk = ck["content_with_weight"]
             chunk_id = str(doc_id) + "-" + hashlib.sha256(chunk.encode()).hexdigest()
             meta_data = {}
-            url = src
             # add data type to meta data to allow query using data type
             meta_data["app_id"] = app_id
             meta_data["doc_id"] = doc_id
@@ -101,12 +101,13 @@ class PdfFileChunker(BaseChunker, PdfParser):
                 chunk_ids.append(chunk_id)
                 documents.append(f"主题：{meta_data['subject']}。段落内容：{chunk}")
                 metadatas.append(meta_data)
+                extra_data.append(ck)
         return {
             "documents": documents,
             "ids": chunk_ids,
             "metadatas": metadatas,
             "doc_id": doc_id,
-            "extra_data": cks
+            "extra_data": extra_data
         }
 
     def ocr_and_layout_recognition(self, src: str, doc):
