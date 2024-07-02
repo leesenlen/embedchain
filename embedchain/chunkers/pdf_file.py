@@ -48,9 +48,29 @@ class PdfFileChunker(BaseChunker, PdfParser):
         app_id = metadata.get("app_id", 1)
         knowledge_id = metadata.get("knowledge_id", 1)
         subject = metadata.get("subject", os.path.basename(src))
+        doc = {
+            "docnm_kwd": subject,
+            "title_tks": rag_tokenizer.tokenize(re.sub(r"\.[a-zA-Z]+$", "", subject))
+        }
         # OCR,布局识别
-        sections, res, doc = self.ocr_and_layout_recognition(src, subject)
+        sections, res = self.ocr_and_layout_recognition(src, doc)
         cks = self.chunk_with_layout(sections, res, config, doc)
+        # OCR异常或者无法处理的情况，直接使用pdf解析
+        if not cks:
+            data_result = loader.load_data(src)
+            data_records = data_result["data"]
+            for data in data_records:
+                content = data["content"]
+                chunks = self.get_chunks(content)
+                for chunk in chunks:
+                    content_ltks = rag_tokenizer.tokenize(chunk)
+                    data = {
+                        "content_with_weight": chunk,
+                        "content_ltks": content_ltks,
+                        "content_sm_ltks": rag_tokenizer.fine_grained_tokenize(content_ltks)
+                    }
+                    data = data.update(doc)
+                    cks.append(data)
         for ck in cks:
             ck["create_time"] = str(datetime.datetime.now()).replace("T", " ")[:19]
             ck["create_timestamp_flt"] = datetime.datetime.now().timestamp()
@@ -72,7 +92,7 @@ class PdfFileChunker(BaseChunker, PdfParser):
             meta_data["hash"] = doc_id
             meta_data["data_type"] = self.data_type.value
             # TODO: 主题可以是一段文本的summary
-            meta_data["subject"] = subject if subject is not None else os.path.basename(url)
+            meta_data["subject"] = subject
             meta_data["status"] = 1
             meta_data['segment_number'] = number
             if idMap.get(chunk_id) is None and len(chunk) >= min_chunk_size:
@@ -88,29 +108,23 @@ class PdfFileChunker(BaseChunker, PdfParser):
             "extra_data": cks
         }
 
-    def ocr_and_layout_recognition(self, src: str, subject: str):
+    def ocr_and_layout_recognition(self, src: str, doc):
         """
         调用sailvan_OCR进行行OCR解析，表格识别，布局识别。然后进行页面处理
         """
-        ocr_url = os.getenv("OCR_URL")
-        with open(src, "rb") as file:
-            files = {
-                "file_type": (None, "pdf"),  # (filename, filetype)
-                "file": (src, file.read(), "application/pdf")
-            }
-        response = requests.post(ocr_url, files=files)
-        assert response.status_code == 200, f"OCR failed: {response.text}"
-        result = response.json()
-        layout = result["boxes"]
-        tbls = result["tables"]
-        page_cum_height = result["page_cum_height"]
-        doc = {
-            "docnm_kwd": subject,
-            "title_tks": rag_tokenizer.tokenize(re.sub(r"\.[a-zA-Z]+$", "", subject))
-        }
-        sections = [(b["text"], self._line_tag(b, 3, page_cum_height)) for b in layout]
-        res = tokenize_table(tbls, doc, False)
-        return sections, res, doc
+        timeout = len(self.pdf.pages) * 10
+        result = self.request_ocr_with_error_handling(src, "pdf", timeout=timeout)
+        # OCR请求失败时，走默认的pdf解析，保证pdf正常解析
+        if not result:
+            return [], []
+        else:
+            layout = result["boxes"]
+            tbls = result["tables"]
+            page_cum_height = result["page_cum_height"]
+
+            sections = [(b["text"], self._line_tag(b, 3, page_cum_height)) for b in layout]
+            res = tokenize_table(tbls, doc, False)
+            return sections, res
 
     @staticmethod
     def generate_doc_id(app_id, content):

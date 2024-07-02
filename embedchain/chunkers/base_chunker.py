@@ -1,6 +1,8 @@
 import hashlib
 import logging
-from typing import Optional,Any
+import traceback
+import requests
+from typing import Optional, Any
 import os
 
 from embedchain.config.add_config import ChunkerConfig
@@ -23,9 +25,9 @@ class BaseChunker(JSONSerializable):
 
         if metadata is None:
             metadata = {}
-        app_id =  metadata.get("app_id",1) #应用ID
-        knowledge_id = metadata.get("knowledge_id",1) #默认知识库ID
-        subject = metadata.get("subject",None) #主题
+        app_id = metadata.get("app_id", 1) #应用ID
+        knowledge_id = metadata.get("knowledge_id", 1) #默认知识库ID
+        subject = metadata.get("subject", None) #主题
 
         data_result = loader.load_data(src)
         data_records = data_result["data"]
@@ -138,3 +140,41 @@ class BaseChunker(JSONSerializable):
     @staticmethod
     def get_word_count(documents) -> int:
         return sum([len(document.split(" ")) for document in documents])
+
+    def request_ocr_with_error_handling(self, src, _type, timeout=60*2):
+        assert _type in ["pdf", "jpg", "jpeg", "png", "bmp", "tif", "tiff"], f"Invalid ocr file type {_type}"
+        ocr_url = os.getenv("OCR_URL", "")
+        if not ocr_url:
+            raise EnvironmentError("OCR_URL is not set, please set OCR_URL environment variable")
+        mime_types = {
+            "pdf": "application/pdf",
+            "jpg": "image/jpeg",
+            "jpeg": "image/jpeg",
+            "png": "image/png",
+            "bmp": "image/bmp",
+            "tif": "image/tiff",
+            "tiff": "image/tiff"
+        }
+        mime_type = mime_types[_type]
+        try:
+            with open(src, "rb") as file:
+                files = {
+                    "file_type": (None, "pdf"),
+                    "file": (src, file.read(), mime_type)
+                }
+            response = requests.post(ocr_url, files=files, timeout=timeout)
+        except requests.exceptions.ConnectionError:
+            logging.error(f"OCR_URL {ocr_url} connect failed")
+            logging.error(traceback.format_exc())
+            return {}
+        except requests.exceptions.Timeout:
+            logging.error(f"OCR_URL {ocr_url} request timeout over {timeout} seconds")
+            logging.error(traceback.format_exc())
+            return {}
+        except Exception:
+            logging.exception(traceback.format_exc())
+            return {}
+        if response.status_code != 200:
+            logging.exception(f"OCR_URL {ocr_url} request failed with status code {response.status_code}")
+            return {}
+        return response.json()
