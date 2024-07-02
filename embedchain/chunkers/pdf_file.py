@@ -70,7 +70,7 @@ class PdfFileChunker(BaseChunker, PdfParser):
                         "content_ltks": content_ltks,
                         "content_sm_ltks": rag_tokenizer.fine_grained_tokenize(content_ltks)
                     }
-                    data = data.update(doc)
+                    data.update(doc)
                     cks.append(data)
         for ck in cks:
             ck["create_time"] = str(datetime.datetime.now()).replace("T", " ")[:19]
