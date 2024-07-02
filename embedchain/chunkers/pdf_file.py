@@ -57,6 +57,7 @@ class PdfFileChunker(BaseChunker, PdfParser):
         cks = self.chunk_with_layout(sections, res, config, doc)
         # OCR异常或者无法处理的情况，直接使用pdf解析
         if not cks:
+            logging.info(f"OCR and layout recognition failed, using pdf parser!!!")
             data_result = loader.load_data(src)
             data_records = data_result["data"]
             for data in data_records:
