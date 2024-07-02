@@ -449,12 +449,12 @@ class ElasticsearchDB(BaseVectorDB):
         logging.info(f"查询作向量化耗时：{(datetime.now() - start_time).total_seconds()}")
         # 如果使用了rerank模型，可以多召回文档，再通过rerank去除置信度低的
         if rerank:
-            retrieve__num = top_k * 5
+            retrieve_num = top_k * 10
         else:
-            retrieve__num = top_k
+            retrieve_num = top_k
         result = self.es_query_engine.search(input_query, and_conditions, self._get_index(), input_query_vector[0],
                                              **{"knn_threshold": knn_threshold, "match_threshold": match_threshold,
-                                                "top_k": retrieve__num, "match_weight": match_weight,
+                                                "top_k": retrieve_num, "match_weight": match_weight,
                                                 "knn_weight": knn_weight})
         contexts = []
         sum_tokens = 0
