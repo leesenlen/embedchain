@@ -145,15 +145,12 @@ def tokenize_table(tbls, doc, eng, batch_size=10):
     for each in tbls:
         rows = each["content"]
         poss = each["position"]
-        img_id = each["img_id"]
         if not rows:
             continue
         if isinstance(rows, str):
             d = copy.deepcopy(doc)
             tokenize(d, rows, eng)
             d["content_with_weight"] = rows
-            if img_id:
-                d["img_id"] = img_id
             if poss:
                 add_positions(d, poss)
             res.append(d)
@@ -163,7 +160,6 @@ def tokenize_table(tbls, doc, eng, batch_size=10):
             d = copy.deepcopy(doc)
             r = de.join(rows[i:i + batch_size])
             tokenize(d, r, eng)
-            d["img_id"] = img_id
             add_positions(d, poss)
             res.append(d)
     return res

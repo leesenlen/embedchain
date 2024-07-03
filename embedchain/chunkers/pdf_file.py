@@ -16,6 +16,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from embedchain.chunkers.base_chunker import BaseChunker
 from embedchain.config.add_config import ChunkerConfig
 from embedchain.helpers.json_serializable import register_deserializable
+from embedchain.utils.oss_manager import OSSClient, OSSFileDirectory
 
 
 @register_deserializable
@@ -79,10 +80,6 @@ class PdfFileChunker(BaseChunker, PdfParser):
         metadatas = []
         extra_data = []
         for number, ck in enumerate(cks):
-            if ck.get("image"):
-                # TODO 图片存储
-                del ck["image"]
-
             chunk = ck["content_with_weight"]
             chunk_id = str(doc_id) + "-" + hashlib.sha256(chunk.encode()).hexdigest()
             meta_data = {}
@@ -97,6 +94,11 @@ class PdfFileChunker(BaseChunker, PdfParser):
             meta_data["status"] = 1
             meta_data['segment_number'] = number
             if idMap.get(chunk_id) is None and len(chunk) >= min_chunk_size:
+                if ck.get("image"):
+                    # 每个chunk的缩略图存储
+                    ck["thumb_oss_url"] = OSSClient().upload_pil_image_to_oss(
+                        image=ck["image"], prefix=OSSFileDirectory.LAYOUT_IMG, name=subject)
+                    del ck["image"]
                 idMap[chunk_id] = True
                 chunk_ids.append(chunk_id)
                 documents.append(f"主题：{meta_data['subject']}。段落内容：{chunk}")
