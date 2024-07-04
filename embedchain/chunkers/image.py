@@ -14,7 +14,6 @@ from embedchain.rag.nlp import rag_tokenizer, tokenize_table, tokenize, add_posi
 from embedchain.chunkers.base_chunker import BaseChunker
 from embedchain.config.add_config import ChunkerConfig
 from embedchain.helpers.json_serializable import register_deserializable
-from embedchain.utils.oss_manager import OSSClient, OSSFileDirectory
 
 
 @register_deserializable
@@ -153,7 +152,7 @@ class ImageChunker(BaseChunker):
                 d["image"], poss = self.crop(ck, need_position=True)
                 add_positions(d, poss)
                 ck = self.remove_tag(ck)
-            except NotImplementedError as e:
+            except NotImplementedError:
                 pass
             tokenize(d, ck, eng)
             res.append(d)
@@ -191,14 +190,14 @@ class ImageChunker(BaseChunker):
         for ii, (pns, left, right, top, bottom) in enumerate(poss):
             right = left + max_width
             bottom *= ZM
-            for pn in pns[1:]:
+            for _ in pns[1:]:
                 bottom += self.page_image.size[1]
             imgs.append(
                 self.page_image.crop((left * ZM, top * ZM,
-                                               right *
-                                               ZM, min(
+                                      right *
+                                      ZM, min(
                     bottom, self.page_image.size[1])
-                                               ))
+                                      ))
             )
             if 0 < ii < len(poss) - 1:
                 positions.append((pns[0], left, right, top, min(
@@ -207,10 +206,10 @@ class ImageChunker(BaseChunker):
             for pn in pns[1:]:
                 imgs.append(
                     self.page_image.crop((left * ZM, 0,
-                                               right * ZM,
-                                               min(bottom,
-                                                   self.page_image.size[1])
-                                               ))
+                                          right * ZM,
+                                          min(bottom,
+                                              self.page_image.size[1])
+                                          ))
                 )
                 if 0 < ii < len(poss) - 1:
                     positions.append((pn, left, right, 0, min(
