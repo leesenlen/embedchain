@@ -85,10 +85,10 @@ class ESQueryBuilder:
         logging.info("【Q】: {}".format(json.dumps(s)))
         res = self.es.search(index=index_name, body=s, _source=src)
         # for DEBUG
-        s1 = {"query": s["query"]}
-        s2 = {"knn": s["knn"]}
-        res1 = self.es.search(index=index_name, body=s1, _source=src)
-        res2 = self.es.search(index=index_name, body=s2, _source=src)
+        # s1 = {"query": s["query"]}
+        # s2 = {"knn": s["knn"]}
+        # res1 = self.es.search(index=index_name, body=s1, _source=src)
+        # res2 = self.es.search(index=index_name, body=s2, _source=src)
         logging.info("TOTAL: {}".format(self.getTotal(res)))
         if self.getTotal(res) == 0 and "knn" in s:
             bqry, _ = self.qryr.question(question, min_match="10%")
