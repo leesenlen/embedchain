@@ -31,7 +31,6 @@ class ImageChunker(BaseChunker):
         super().__init__(text_splitter)
 
     def chunks(self, loader, src, metadata: Optional[dict[str, Any]] = None, config: Optional[ChunkerConfig] = None):
-        # self.page_images = [p.to_image(resolution=72 * 3).annotated for i, p in enumerate(self.pdf.pages)]
         self.page_image = Image.fromarray(cv2.imread(src))
         documents = []
         chunk_ids = []
