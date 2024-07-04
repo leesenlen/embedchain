@@ -368,7 +368,7 @@ def detect_datatype(source: Any) -> DataType:
             return DataType.JSON
 
         # 图片格式
-        if re.search(r'.(png|jpg|jpeg|bmp|gif|tiff|tif)$', source):
+        if re.search(r'.(png|jpg|jpeg|bmp|tiff|tif)$', source):
             logging.debug(f"Source of `{formatted_source}` detected as `image`.")
             return DataType.IMAGE
 

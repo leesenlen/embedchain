@@ -1,15 +1,20 @@
 from typing import Optional, Any
 import os
+import re
 import datetime
 import logging
 import hashlib
-import requests
 from PIL import Image
+import cv2
+import numpy as np
+import copy
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from embedchain.rag.nlp import rag_tokenizer, tokenize_table, tokenize, add_positions, naive_merge
 
 from embedchain.chunkers.base_chunker import BaseChunker
 from embedchain.config.add_config import ChunkerConfig
 from embedchain.helpers.json_serializable import register_deserializable
+from embedchain.utils.oss_manager import OSSClient, OSSFileDirectory
 
 
 @register_deserializable
@@ -28,7 +33,7 @@ class ImageChunker(BaseChunker):
 
     def chunks(self, loader, src, metadata: Optional[dict[str, Any]] = None, config: Optional[ChunkerConfig] = None):
         # self.page_images = [p.to_image(resolution=72 * 3).annotated for i, p in enumerate(self.pdf.pages)]
-        page_image = Image.open(src)
+        self.page_image = Image.fromarray(cv2.imread(src))
         documents = []
         chunk_ids = []
         idMap = {}
@@ -41,7 +46,12 @@ class ImageChunker(BaseChunker):
         knowledge_id = metadata.get("knowledge_id", 1)
         subject = metadata.get("subject", os.path.basename(src))
         # OCR,布局识别
-        sections, res, doc = self.ocr_and_layout_recognition(src, subject)
+        doc = {
+            "docnm_kwd": subject,
+            "title_tks": rag_tokenizer.tokenize(re.sub(r"\.[a-zA-Z]+$", "", subject))
+        }
+        # OCR,布局识别
+        sections, res = self.ocr_and_layout_recognition(src, doc)
         cks = self.chunk_with_layout(sections, res, config, doc)
         for ck in cks:
             ck["create_time"] = str(datetime.datetime.now()).replace("T", " ")[:19]
@@ -49,10 +59,6 @@ class ImageChunker(BaseChunker):
         doc_id = self.generate_doc_id(app_id, "".join(each["content_with_weight"] for each in cks))
         metadatas = []
         for number, ck in enumerate(cks):
-            if ck.get("image"):
-                # TODO 图片存储
-                del ck["image"]
-
             chunk = ck["content_with_weight"]
             chunk_id = str(doc_id) + "-" + hashlib.sha256(chunk.encode()).hexdigest()
             meta_data = {}
@@ -68,6 +74,8 @@ class ImageChunker(BaseChunker):
             meta_data["status"] = 1
             meta_data['segment_number'] = number
             if idMap.get(chunk_id) is None and len(chunk) >= min_chunk_size:
+                if ck.get("image"):
+                    del ck["image"]
                 idMap[chunk_id] = True
                 chunk_ids.append(chunk_id)
                 documents.append(f"主题：{meta_data['subject']}。段落内容：{chunk}")
@@ -80,29 +88,25 @@ class ImageChunker(BaseChunker):
             "extra_data": cks
         }
 
-    def ocr_and_layout_recognition(self, src: str, subject: str):
+    def ocr_and_layout_recognition(self, src: str, doc):
         """
         调用sailvan_OCR进行行OCR解析，表格识别，布局识别。然后进行页面处理
         """
-        ocr_url = os.getenv("OCR_URL")
-        with open(src, "rb") as file:
-            files = {
-                "file_type": (None, "pdf"),  # (filename, filetype)
-                "file": (src, file.read(), "application/pdf")
-            }
-        response = requests.post(ocr_url, files=files)
-        assert response.status_code == 200, f"OCR failed: {response.text}"
-        result = response.json()
-        layout = result["boxes"]
-        tbls = result["tables"]
-        page_cum_height = result["page_cum_height"]
-        doc = {
-            "docnm_kwd": subject,
-            "title_tks": rag_tokenizer.tokenize(re.sub(r"\.[a-zA-Z]+$", "", subject))
-        }
-        sections = [(b["text"], self._line_tag(b, 3, page_cum_height)) for b in layout]
-        res = tokenize_table(tbls, doc, False)
-        return sections, res, doc
+        _, extension = os.path.splitext(src)
+        extension = extension.lstrip('.').lower()
+        timeout = 30
+        result = self.request_ocr_with_error_handling(src, extension, timeout=timeout)
+        # OCR请求失败时，走默认的pdf解析，保证pdf正常解析
+        if not result:
+            return [], []
+        else:
+            layout = result["boxes"]
+            tbls = result["tables"]
+            page_cum_height = result["page_cum_height"]
+
+            sections = [(b["text"], self._line_tag(b, 1, page_cum_height)) for b in layout]
+            res = tokenize_table(tbls, doc, False)
+            return sections, res
 
     @staticmethod
     def generate_doc_id(app_id, content):
@@ -115,11 +119,11 @@ class ImageChunker(BaseChunker):
         pn = [bx["page_number"]]
         top = bx["top"] - page_cum_height[pn[0] - 1]
         bott = bx["bottom"] - page_cum_height[pn[0] - 1]
-        page_images_cnt = len(self.page_images)
+        page_images_cnt = 1
         if pn[-1] - 1 >= page_images_cnt:
             return ""
-        while bott * ZM > self.page_images[pn[-1] - 1].size[1]:
-            bott -= self.page_images[pn[-1] - 1].size[1] / ZM
+        while bott * ZM > self.page_image.size[1]:
+            bott -= self.page_image.size[1] / ZM
             pn.append(pn[-1] + 1)
             if pn[-1] - 1 >= page_images_cnt:
                 return ""
@@ -180,38 +184,38 @@ class ImageChunker(BaseChunker):
         poss.insert(0, ([pos[0][0]], pos[1], pos[2], max(
             0, pos[3] - 120), max(pos[3] - GAP, 0)))
         pos = poss[-1]
-        poss.append(([pos[0][-1]], pos[1], pos[2], min(self.page_images[pos[0][-1]].size[1] / ZM, pos[4] + GAP),
-                     min(self.page_images[pos[0][-1]].size[1] / ZM, pos[4] + 120)))
+        poss.append(([pos[0][-1]], pos[1], pos[2], min(self.page_image.size[1] / ZM, pos[4] + GAP),
+                     min(self.page_image.size[1] / ZM, pos[4] + 120)))
 
         positions = []
         for ii, (pns, left, right, top, bottom) in enumerate(poss):
             right = left + max_width
             bottom *= ZM
             for pn in pns[1:]:
-                bottom += self.page_images[pn - 1].size[1]
+                bottom += self.page_image.size[1]
             imgs.append(
-                self.page_images[pns[0]].crop((left * ZM, top * ZM,
+                self.page_image.crop((left * ZM, top * ZM,
                                                right *
                                                ZM, min(
-                    bottom, self.page_images[pns[0]].size[1])
+                    bottom, self.page_image.size[1])
                                                ))
             )
             if 0 < ii < len(poss) - 1:
-                positions.append((pns[0] + self.page_from, left, right, top, min(
-                    bottom, self.page_images[pns[0]].size[1]) / ZM))
-            bottom -= self.page_images[pns[0]].size[1]
+                positions.append((pns[0], left, right, top, min(
+                    bottom, self.page_image.size[1]) / ZM))
+            bottom -= self.page_image.size[1]
             for pn in pns[1:]:
                 imgs.append(
-                    self.page_images[pn].crop((left * ZM, 0,
+                    self.page_image.crop((left * ZM, 0,
                                                right * ZM,
                                                min(bottom,
-                                                   self.page_images[pn].size[1])
+                                                   self.page_image.size[1])
                                                ))
                 )
                 if 0 < ii < len(poss) - 1:
-                    positions.append((pn + self.page_from, left, right, 0, min(
-                        bottom, self.page_images[pn].size[1]) / ZM))
-                bottom -= self.page_images[pn].size[1]
+                    positions.append((pn, left, right, 0, min(
+                        bottom, self.page_image.size[1]) / ZM))
+                bottom -= self.page_image.size[1]
 
         if not imgs:
             if need_position:

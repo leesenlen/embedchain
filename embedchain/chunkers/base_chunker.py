@@ -159,7 +159,7 @@ class BaseChunker(JSONSerializable):
         try:
             with open(src, "rb") as file:
                 files = {
-                    "file_type": (None, "pdf"),
+                    "file_type": (None, _type),
                     "file": (src, file.read(), mime_type)
                 }
             response = requests.post(ocr_url, files=files, timeout=timeout)
