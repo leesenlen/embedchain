@@ -367,6 +367,11 @@ def detect_datatype(source: Any) -> DataType:
             logging.debug(f"Source of `{formatted_source}` detected as `json`.")
             return DataType.JSON
 
+        # 图片格式
+        if re.search(r'.(png|jpg|jpeg|bmp|gif|tiff|tif)$', source):
+            logging.debug(f"Source of `{formatted_source}` detected as `image`.")
+            return DataType.IMAGE
+
         if os.path.exists(source) and is_readable(open(source).read()):
             logging.debug(f"Source of `{formatted_source}` detected as `text_file`.")
             return DataType.TEXT_FILE
