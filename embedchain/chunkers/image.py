@@ -159,7 +159,7 @@ class ImageChunker(BaseChunker):
             res.append(d)
         return res
 
-    def crop(self, text, ZM=3, need_position=False):
+    def crop(self, text, ZM=1, need_position=False):
         """
             将识别的布局快切割出来，用来保存缩略图，方便进行rag效果查看
         """

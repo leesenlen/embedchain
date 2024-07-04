@@ -45,7 +45,7 @@ def insert_md(base_dir):
 
 if __name__ == "__main__":
     # insert_md("E:\project\eip-docs\doc")
-    file_path = "C:\\Users\\admin\\Documents\\docs\\test_table.png"
+    file_path = "C:\\Users\\admin\\Documents\\docs\\test_chinese.png"
     # # file_path = "E:\\project\\eip-docs\\doc\\version.md"
     metadata = {'system_doc_id': 1010,
                 'app_id': 2,
