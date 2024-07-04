@@ -4,6 +4,9 @@ import traceback
 import requests
 from typing import Optional, Any
 import os
+from embedchain.rag.nlp import rag_tokenizer
+import re
+import datetime
 
 from embedchain.config.add_config import ChunkerConfig
 from embedchain.helpers.json_serializable import JSONSerializable
@@ -19,6 +22,7 @@ class BaseChunker(JSONSerializable):
     def chunks(self, loader, src, metadata: Optional[dict[str, Any]] = None, config: Optional[ChunkerConfig] = None):
         documents = []
         chunk_ids = []
+        extra_data = []
         idMap = {}
         min_chunk_size = config.min_chunk_size if config is not None else 1
         logging.info(f"[INFO] Skipping chunks smaller than {min_chunk_size} characters")
@@ -33,11 +37,16 @@ class BaseChunker(JSONSerializable):
         data_records = data_result["data"]
         hash_data = data_result["doc_id"]
         doc_id = str(app_id) + "-" + data_result["doc_id"]
-
         metadatas = []
+        subject = metadata.get("subject", self.get_subject_from_filepath(src))
+        data = {
+            "create_time": str(datetime.datetime.now()).replace("T", " ")[:19],
+            "create_timestamp_flt": datetime.datetime.now().timestamp(),
+            "docnm_kwd": subject,
+            "title_tks": rag_tokenizer.tokenize(re.sub(r"\.[a-zA-Z]+$", "", subject))
+        }
         for data in data_records:
             content = data["content"]
-
             chunks = self.get_chunks(content)
             number = 0
             for chunk in chunks:
@@ -53,12 +62,18 @@ class BaseChunker(JSONSerializable):
                 meta_data["knowledge_id"] = knowledge_id
                 meta_data["hash"] = hash_data
                 meta_data["data_type"] = self.data_type.value
-
                 meta_data["subject"] = subject if subject is not None else os.path.basename(url)
                 meta_data["status"] = 1
                 meta_data['segment_number'] = number
-
                 if idMap.get(chunk_id) is None and len(chunk) >= min_chunk_size:
+                    content_ltks = rag_tokenizer.tokenize(chunk)
+                    extra = {
+                        "content_with_weight": chunk,
+                        "content_ltks": content_ltks,
+                        "content_sm_ltks": rag_tokenizer.fine_grained_tokenize(content_ltks)
+                    }
+                    extra.update(data)
+                    extra_data.append(extra)
                     idMap[chunk_id] = True
                     chunk_ids.append(chunk_id)
                     documents.append(f"主题：{meta_data['subject']}。段落内容：{chunk}")
@@ -67,7 +82,8 @@ class BaseChunker(JSONSerializable):
             "documents": documents,
             "ids": chunk_ids,
             "metadatas": metadatas,
-            "doc_id": doc_id
+            "doc_id": doc_id,
+            "extra_data": extra_data
         }
     
     def create_chunks(self, loader, src, app_id=None, config: Optional[ChunkerConfig] = None):
@@ -178,3 +194,10 @@ class BaseChunker(JSONSerializable):
             logging.exception(f"OCR_URL {ocr_url} request failed with status code {response.status_code}")
             return {}
         return response.json()
+
+    def get_subject_from_filepath(self, filepath):
+        basename = os.path.basename(filepath)
+        if "." not in basename:
+            return basename
+        subject, ext = basename.rsplit(".", 1)
+        return subject

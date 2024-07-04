@@ -208,6 +208,7 @@ class ElasticsearchDB(BaseVectorDB):
             batch_docs = []
             for id, text, metadata, embedding, extra in zip(ids, docs, metadatas, embeddings, extra_datas):
                 metadata['tokens_num'] = self.num_tokens_from_string(text, "cl100k_base")
+                extra = {} if extra is None else extra
                 batch_docs.append(
                     {
                         "_index": self._get_index(),

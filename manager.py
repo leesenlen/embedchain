@@ -45,12 +45,12 @@ def insert_md(base_dir):
 
 if __name__ == "__main__":
     # insert_md("E:\project\eip-docs\doc")
-    file_path = "C:\\Users\\admin\\Documents\\docs\\03-《新员工入职指引》.pdf"
+    file_path = "C:\\Users\\admin\\Documents\\docs\\说明书.txt"
     # # file_path = "E:\\project\\eip-docs\\doc\\version.md"
     metadata = {'system_doc_id': 1012,
                 'app_id': 2,
                 'knowledge_id': 438,
-                'subject': '新员工入职指引',
+                'subject': 'excel说明书',
                 'link': ''}
     doc_id = embedder.upsert(source=file_path, metadata=metadata)
 

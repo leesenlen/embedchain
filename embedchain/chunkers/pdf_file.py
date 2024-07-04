@@ -46,7 +46,7 @@ class PdfFileChunker(BaseChunker):
             metadata = {}
         app_id = metadata.get("app_id", 1)
         knowledge_id = metadata.get("knowledge_id", 1)
-        subject = metadata.get("subject", os.path.basename(src))
+        subject = metadata.get("subject", self.get_subject_from_filepath(src))
         doc = {
             "docnm_kwd": subject,
             "title_tks": rag_tokenizer.tokenize(re.sub(r"\.[a-zA-Z]+$", "", subject))
