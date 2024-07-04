@@ -7,10 +7,8 @@ from typing import Optional, Any
 import numpy as np
 from PIL import Image
 import pdfplumber
-import requests
 import logging
-from embedchain.deepdoc.parser import PdfParser
-from embedchain.rag.nlp import rag_tokenizer, naive_merge, tokenize_table, tokenize_chunks, tokenize, add_positions
+from embedchain.rag.nlp import rag_tokenizer, naive_merge, tokenize_table, tokenize, add_positions
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from embedchain.chunkers.base_chunker import BaseChunker
@@ -20,7 +18,7 @@ from embedchain.utils.oss_manager import OSSClient, OSSFileDirectory
 
 
 @register_deserializable
-class PdfFileChunker(BaseChunker, PdfParser):
+class PdfFileChunker(BaseChunker):
     """Chunker for PDF file."""
 
     def __init__(self, config: Optional[ChunkerConfig] = None):
@@ -82,17 +80,10 @@ class PdfFileChunker(BaseChunker, PdfParser):
         for number, ck in enumerate(cks):
             chunk = ck["content_with_weight"]
             chunk_id = str(doc_id) + "-" + hashlib.sha256(chunk.encode()).hexdigest()
-            meta_data = {}
+            meta_data = {"app_id": app_id, "doc_id": doc_id, "knowledge_id": knowledge_id, "hash": doc_id,
+                         "data_type": self.data_type.value, "subject": subject, "status": 1, 'segment_number': number}
             # add data type to meta data to allow query using data type
-            meta_data["app_id"] = app_id
-            meta_data["doc_id"] = doc_id
-            meta_data["knowledge_id"] = knowledge_id
-            meta_data["hash"] = doc_id
-            meta_data["data_type"] = self.data_type.value
             # TODO: 主题可以是一段文本的summary
-            meta_data["subject"] = subject
-            meta_data["status"] = 1
-            meta_data['segment_number'] = number
             if idMap.get(chunk_id) is None and len(chunk) >= min_chunk_size:
                 if ck.get("image"):
                     # 每个chunk的缩略图存储
@@ -175,7 +166,7 @@ class PdfFileChunker(BaseChunker, PdfParser):
                 d["image"], poss = self.crop(ck, need_position=True)
                 add_positions(d, poss)
                 ck = self.remove_tag(ck)
-            except NotImplementedError as e:
+            except NotImplementedError:
                 pass
             tokenize(d, ck, eng)
             res.append(d)
@@ -264,4 +255,3 @@ class PdfFileChunker(BaseChunker, PdfParser):
         if need_position:
             return pic, positions
         return pic
-
