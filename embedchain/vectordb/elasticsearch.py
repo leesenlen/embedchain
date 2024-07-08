@@ -471,9 +471,9 @@ class ElasticsearchDB(BaseVectorDB):
             context["tokens_num"] = tokens_num # token计数
             context["knowledge_id"] = context["metadata"]["knowledge_id"] #知识库id
             context["doc_id"] = context["metadata"]["system_doc_id"] # 文档id
-            context["url"] = context["metadata"]["link"] # 链接
+            context["link"] = context["metadata"]["link"] # 链接
             context["score"] = result.scores[i] # 文档得分
-            context["tag"] = context["metadata"]["labels"] # 标签
+            context["labels"] = context["metadata"]["labels"] # 标签
             context["subject"] = context["metadata"]["subject"] # 主题
             context["status"] = context["metadata"]["status"] # 状态
 
