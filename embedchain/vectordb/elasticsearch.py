@@ -467,12 +467,16 @@ class ElasticsearchDB(BaseVectorDB):
             tokens_num = self.num_tokens_from_messages(context["content_with_weight"], model)
             sum_tokens += tokens_num
             context["context"] = context["content_with_weight"]
-            context["id"] = _id
-            context["tokens_num"] = tokens_num
-            context["knowledge_id"] = context["metadata"]["knowledge_id"]
-            context["doc_id"] = context["metadata"]["system_doc_id"]
-            context["link"] = context["metadata"]["link"]
-            context["score"] = result.scores[i]
+            context["id"] = _id  # es文档id
+            context["tokens_num"] = tokens_num # token计数
+            context["knowledge_id"] = context["metadata"]["knowledge_id"] #知识库id
+            context["doc_id"] = context["metadata"]["system_doc_id"] # 文档id
+            context["url"] = context["metadata"]["link"] # 链接
+            context["score"] = result.scores[i] # 文档得分
+            context["tag"] = context["metadata"]["labels"] # 标签
+            context["subject"] = context["metadata"]["subject"] # 主题
+            context["status"] = context["metadata"]["status"] # 状态
+
             if rerank and os.getenv("RERANK_URL", ""):
                 context["rerank_score"] = result.rerank_scores[i]
             del context["content_with_weight"]
