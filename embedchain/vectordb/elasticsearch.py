@@ -470,6 +470,8 @@ class ElasticsearchDB(BaseVectorDB):
             context["id"] = _id
             context["tokens_num"] = tokens_num
             context["knowledge_id"] = context["metadata"]["knowledge_id"]
+            context["doc_id"] = context["metadata"]["system_doc_id"]
+            context["link"] = context["metadata"]["link"]
             context["score"] = result.scores[i]
             if rerank and os.getenv("RERANK_URL", ""):
                 context["rerank_score"] = result.rerank_scores[i]
