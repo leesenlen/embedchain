@@ -743,7 +743,7 @@ class ElasticsearchDB(BaseVectorDB):
         rerank_url = os.getenv("RERANK_URL")
         contents = []
         for i, _id in enumerate(docs.ids):
-            contents.append("主题：2023-04-19安克创新：2022年年度报告。段落内容：" + docs.field[_id]["content_with_weight"])
+            contents.append(docs.field[_id]["content_with_weight"])
         rerank_scores = requests.post(rerank_url, json={"question": query, "docs": contents}).json()["scores"]
         combined_list = [(rerank_score, _id, score) for rerank_score, _id, score in zip(rerank_scores, docs.ids, docs.scores) if
                          rerank_score >= discard_threshold]
