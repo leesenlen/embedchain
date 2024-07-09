@@ -469,13 +469,13 @@ class ElasticsearchDB(BaseVectorDB):
             context["context"] = context["content_with_weight"]
             context["id"] = _id  # es文档id
             context["tokens_num"] = tokens_num # token计数
-            context["knowledge_id"] = context["metadata"]["knowledge_id"] #知识库id
+            context["knowledge_id"] = context["metadata"]["knowledge_id"] if 'knowledge_id' in context["metadata"] else 0 #知识库id
             context["doc_id"] = context["metadata"]["system_doc_id"] # 文档id
-            context["link"] = context["metadata"]["link"] # 链接
+            context["link"] = context["metadata"]["link"] if "link" in context["metadata"] else '' # 链接
             context["score"] = result.scores[i] # 文档得分
-            context["labels"] = context["metadata"]["labels"] # 标签
-            context["subject"] = context["metadata"]["subject"] # 主题
-            context["status"] = context["metadata"]["status"] # 状态
+            context["labels"] = context["metadata"]["labels"] if "labels" in context["metadata"] else ''  # 标签
+            context["subject"] = context["metadata"]["subject"] if "subject" in context["metadata"] else '' # 主题
+            context["status"] = context["metadata"]["status"] if "status" in context["metadata"] else 0 # 状态
 
             if rerank and os.getenv("RERANK_URL", ""):
                 context["rerank_score"] = result.rerank_scores[i]
