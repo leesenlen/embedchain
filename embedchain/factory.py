@@ -54,6 +54,7 @@ class EmbedderFactory:
         "vertexai": "embedchain.embedder.vertexai.VertexAIEmbedder",
         "google": "embedchain.embedder.google.GoogleAIEmbedder",
         "mistralai": "embedchain.embedder.mistralai.MistralAIEmbedder",
+        "local": "embedchain.embedder.local.LocalEmbedder"
     }
     provider_to_config_class = {
         "azure_openai": "embedchain.config.embedder.base.BaseEmbedderConfig",
@@ -61,6 +62,7 @@ class EmbedderFactory:
         "gpt4all": "embedchain.config.embedder.base.BaseEmbedderConfig",
         "google": "embedchain.config.embedder.google.GoogleAIEmbedderConfig",
         "huggingface": "embedchain.config.embedder.base.BaseEmbedderConfig",
+        "local": "embedchain.embedder.base.BaseEmbedderConfig"
     }
 
     @classmethod
