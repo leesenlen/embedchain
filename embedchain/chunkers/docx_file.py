@@ -92,7 +92,7 @@ class DocxFileChunker(BaseChunker, RAGFlowDocxParser):
         chunks = naive_merge(sections, config.chunk_size, delimiter)
         cks.extend(tokenize_chunks(chunks, doc, eng, None))
 
-        doc_id = self.generate_doc_id(app_id, "".join(each["content_with_weight"] for each in cks))
+        doc_id = metadata.get("doc_id") or self.generate_doc_id(app_id, "".join(each["content_with_weight"] for each in cks))
         metadatas = []
         for number, ck in enumerate(cks):
             chunk = ck["content_with_weight"]

@@ -49,7 +49,7 @@ class MarkdownChunker(BaseChunker):
         app_id = metadata.get("app_id", 1)
         knowledge_id = metadata.get("knowledge_id", 1)
         subject = metadata.get("subject", os.path.basename(src))
-        doc_id = self.generate_doc_id(app_id, "".join(each.page_content for each in md_header_splits))
+        doc_id = metadata.get("doc_id") or self.generate_doc_id(app_id, "".join(each.page_content for each in md_header_splits))
         metadatas = []
         extra_data = []
         for idx, chunk in enumerate(md_header_splits):

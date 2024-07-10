@@ -74,7 +74,7 @@ class PdfFileChunker(BaseChunker):
         for ck in cks:
             ck["create_time"] = str(datetime.datetime.now()).replace("T", " ")[:19]
             ck["create_timestamp_flt"] = datetime.datetime.now().timestamp()
-        doc_id = self.generate_doc_id(app_id, "".join(each["content_with_weight"] for each in cks))
+        doc_id = metadata.get("doc_id") or self.generate_doc_id(app_id, "".join(each["content_with_weight"] for each in cks))
         metadatas = []
         extra_data = []
         for number, ck in enumerate(cks):

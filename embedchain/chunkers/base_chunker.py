@@ -36,7 +36,7 @@ class BaseChunker(JSONSerializable):
         data_result = loader.load_data(src)
         data_records = data_result["data"]
         hash_data = data_result["doc_id"]
-        doc_id = str(app_id) + "-" + data_result["doc_id"]
+        doc_id = metadata.get("doc_id") or str(app_id) + "-" + data_result["doc_id"]
         metadatas = []
         subject = metadata.get("subject", self.get_subject_from_filepath(src))
         data = {

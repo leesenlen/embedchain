@@ -52,14 +52,15 @@ def insert_md(base_dir):
 
 if __name__ == "__main__":
     # insert_md("E:\project\eip-docs\doc")
-    # file_path = "C:\\Users\\admin\\Documents\\docs\\说明书.txt"
-    # # # file_path = "E:\\project\\eip-docs\\doc\\version.md"
-    # metadata = {'system_doc_id': 1012,
-    #             'app_id': 2,
-    #             'knowledge_id': 438,
-    #             'subject': 'excel说明书',
-    #             'link': ''}
-    # doc_id = embedder.upsert(source=file_path, metadata=metadata)
+    file_path = "C:\\Users\\admin\\Documents\\docs\\说明书.txt"
+    # # file_path = "E:\\project\\eip-docs\\doc\\version.md"
+    metadata = {'system_doc_id': 1012,
+                'doc_id': "2-c7389a9b6d27d66861bd9f0f8ea555de2d9dd6ace68785b767896379c27e7753",
+                'app_id': 2,
+                'knowledge_id': 438,
+                'subject': 'excel说明书',
+                'link': ''}
+    doc_id = embedder.upsert(source=file_path, metadata=metadata)
 
     #
     import requests
