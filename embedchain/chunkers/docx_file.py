@@ -134,12 +134,7 @@ class DocxFileChunker(BaseChunker):
                 continue
             print("--", ck)
             d = copy.deepcopy(doc)
-            try:
-                d["image"], poss = self.crop(ck, need_position=True)
-                add_positions(d, poss)
-                ck = self.remove_tag(ck)
-            except NotImplementedError:
-                pass
+            ck = self.remove_tag(ck)
             tokenize(d, ck, eng)
             res.append(d)
         return res
