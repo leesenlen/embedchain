@@ -160,7 +160,8 @@ def tokenize_table(tbls, doc, eng, batch_size=10):
             d = copy.deepcopy(doc)
             r = de.join(rows[i:i + batch_size])
             tokenize(d, r, eng)
-            add_positions(d, poss)
+            if poss:
+                add_positions(d, poss)
             res.append(d)
     return res
 
