@@ -138,3 +138,6 @@ class DocxFileChunker(BaseChunker):
             tokenize(d, ck, eng)
             res.append(d)
         return res
+
+    def remove_tag(self, txt):
+        return re.sub(r"@@[\t0-9.-]+?##", "", txt)
