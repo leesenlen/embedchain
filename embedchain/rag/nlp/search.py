@@ -61,7 +61,7 @@ class ESQueryBuilder:
         s = Search()
 
         src = kwargs.get("fields", ["docnm_kwd", "content_ltks", "img_id", "title_tks", "important_kwd",
-                                    "metadata", "position_int", "content_with_weight"])
+                                    "metadata", "position_int", "content_with_weight", "text"])
 
         s = s.query(bqry)
         s = s.extra(size=top_k)

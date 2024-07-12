@@ -440,7 +440,7 @@ class ElasticsearchDB(BaseVectorDB):
             match_threshold: float = 1,
             rerank=True,
             top_k: int = 8,
-            rerank_discard_threshold=0.01,
+            rerank_discard_threshold=0.05,
             **kwargs,
     ) -> Union[list[tuple[str, dict]], list[str]]:
         # 起始时间
@@ -733,7 +733,7 @@ class ElasticsearchDB(BaseVectorDB):
         self.client.delete_by_query(index=self._get_index(), body=query)
         self.client.indices.refresh(index=self._get_index())
 
-    def rerank(self, query, docs, discard_threshold=0.01, top_k=10) -> None:
+    def rerank(self, query, docs, discard_threshold=0.01, top_k=8) -> None:
         """
         对搜索到的结果，进行rerank重排序，剔除置信度较低的结果
         :param docs: 文档
@@ -743,7 +743,10 @@ class ElasticsearchDB(BaseVectorDB):
         rerank_url = os.getenv("RERANK_URL")
         contents = []
         for i, _id in enumerate(docs.ids):
-            contents.append(docs.field[_id]["content_with_weight"])
+            if docs.field[_id].get("content_with_weight"):
+                contents.append(docs.field[_id]["content_with_weight"])
+            else:
+                contents.append(docs.field[_id]["text"])
         rerank_scores = requests.post(rerank_url, json={"question": query, "docs": contents}).json()["scores"]
         combined_list = [(rerank_score, _id, score) for rerank_score, _id, score in zip(rerank_scores, docs.ids, docs.scores) if
                          rerank_score >= discard_threshold]
