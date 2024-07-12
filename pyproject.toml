@@ -168,6 +168,7 @@ python-docx = "1.1.0"
 openpyxl = "3.1.2"
 elasticsearch-dsl = "^8.14.0"
 concurrent-log = "^1.0.1"
+markdown = "^3.6"
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"
 pre-commit = "^3.2.2"
