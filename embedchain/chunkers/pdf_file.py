@@ -1,5 +1,5 @@
 import re
-import os
+import traceback
 import datetime
 import copy
 import hashlib
@@ -168,6 +168,9 @@ class PdfFileChunker(BaseChunker):
                 ck = self.remove_tag(ck)
             except NotImplementedError:
                 pass
+            except Exception:
+                logging.exception(traceback.format_exc())
+                logging.exception("crop img error")
             tokenize(d, ck, eng)
             res.append(d)
         return res
