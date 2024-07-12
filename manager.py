@@ -7,11 +7,18 @@ es_key = os.getenv("ES_KEY")
 config = {
     'embedder':
         {
-            'provider': 'azure_openai',
+            # 'provider': 'azure_openai',
+            # 'config':
+            #     {
+            #         'model': 'text-embedding-3-large',
+            #         'deployment_name': 'text-embedding-3-large',
+            #         'vector_dimension': 1024
+            #     }
+            'provider': 'local',
             'config':
                 {
-                    'model': 'text-embedding-3-large',
-                    'deployment_name': 'text-embedding-3-large',
+                    'model': 'bge-m3',
+                    'deployment_name': 'text-embedding',
                     'vector_dimension': 1024
                 }
         },
@@ -45,12 +52,12 @@ def insert_md(base_dir):
 
 if __name__ == "__main__":
     # insert_md("E:\project\eip-docs\doc")
-    file_path = "C:\\Users\\admin\\Documents\\docs\\说明书.txt"
+    file_path = "C:\\Users\\admin\\Documents\\docs\\职位说明书.docx"
     # # file_path = "E:\\project\\eip-docs\\doc\\version.md"
-    metadata = {'system_doc_id': 1012,
+    metadata = {'system_doc_id': 1200,
                 'app_id': 2,
                 'knowledge_id': 438,
-                'subject': 'excel说明书',
+                'subject': '职位说明书',
                 'link': ''}
     doc_id = embedder.upsert(source=file_path, metadata=metadata)
 

@@ -71,7 +71,7 @@ class PPTChunker(BaseChunker, RAGFlowPptParser):
                     0.5, 0.5).save(
                     buffered, drawing.imaging.ImageFormat.jpeg)
                 imgs.append(Image.open(buffered))
-        doc_id = self.generate_doc_id(app_id, "".join(txts))
+        doc_id = metadata.get("doc_id") or self.generate_doc_id(app_id, "".join(txts))
         assert len(imgs) == len(
             txts), "Slides text and image do not match: {} vs. {}".format(len(imgs), len(txts))
         self.is_english = is_english(txts)

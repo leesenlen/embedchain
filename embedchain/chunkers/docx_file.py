@@ -1,24 +1,24 @@
 import os
 import re
+import copy
+import datetime
 from typing import Optional, Any
 from docx import Document
 import hashlib
-from embedchain.rag.nlp import tokenize_table, naive_merge, tokenize_chunks, rag_tokenizer
+from embedchain.rag.nlp import tokenize_table, naive_merge, tokenize, rag_tokenizer, add_positions
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from embedchain.chunkers.base_chunker import BaseChunker
 from embedchain.config.add_config import ChunkerConfig
 from embedchain.helpers.json_serializable import register_deserializable
-from embedchain.deepdoc.parser.docx_parser import RAGFlowDocxParser
 
 
 @register_deserializable
-class DocxFileChunker(BaseChunker, RAGFlowDocxParser):
+class DocxFileChunker(BaseChunker):
     """Chunker for .docx file."""
 
     def __init__(self, config: Optional[ChunkerConfig] = None):
-        super().__init__(RAGFlowDocxParser)
         if config is None:
             config = ChunkerConfig(chunk_size=1000, chunk_overlap=0, length_function=len)
         text_splitter = RecursiveCharacterTextSplitter(
@@ -41,12 +41,13 @@ class DocxFileChunker(BaseChunker, RAGFlowDocxParser):
         self.doc = Document(src)
         min_chunk_size = config.min_chunk_size if config is not None else 1
         documents = []
+        extra_data = []
         chunk_ids = []
         idMap = {}
         filename = os.path.basename(src)
         app_id = metadata.get("app_id", 1)
         knowledge_id = metadata.get("knowledge_id", 1)
-        subject = metadata.get("subject", None)
+        subject = metadata.get("subject", self.get_subject_from_filepath(src))
         pn = 0
         from_page = int(metadata.get("from_page", 0))
         to_page = int(metadata.get("to_page", 100000))
@@ -84,17 +85,20 @@ class DocxFileChunker(BaseChunker, RAGFlowDocxParser):
             tbls.append(((None, html), ""))
         sections = [(l, "") for l in lines if l]
         doc = {
-            "docnm_kwd": filename,
+            "docnm_kwd": subject,
             "title_tks": rag_tokenizer.tokenize(re.sub(r"\.[a-zA-Z]+$", "", filename))
         }
         doc["title_sm_tks"] = rag_tokenizer.fine_grained_tokenize(doc["title_tks"])
+        tbls = [{"content": each[0][1], "position": None} for each in tbls]
         cks = tokenize_table(tbls, doc, eng)
         chunks = naive_merge(sections, config.chunk_size, delimiter)
-        cks.extend(tokenize_chunks(chunks, doc, eng, None))
-
-        doc_id = self.generate_doc_id(app_id, "".join(each["content_with_weight"] for each in cks))
+        cks.extend(self.tokenize_chunks(chunks, doc, eng))
+        doc_id = metadata.get("doc_id") or self.generate_doc_id(app_id, "".join(each["content_with_weight"] for each in cks))
         metadatas = []
         for number, ck in enumerate(cks):
+            ck.update(doc)
+            ck["create_time"] = str(datetime.datetime.now()).replace("T", " ")[:19]
+            ck["create_timestamp_flt"] = datetime.datetime.now().timestamp()
             chunk = ck["content_with_weight"]
             chunk_id = str(doc_id) + "-" + hashlib.sha256(chunk.encode()).hexdigest()
             meta_data = {}
@@ -113,9 +117,27 @@ class DocxFileChunker(BaseChunker, RAGFlowDocxParser):
                 chunk_ids.append(chunk_id)
                 documents.append(f"主题：{meta_data['subject']}。段落内容：{chunk}")
                 metadatas.append(meta_data)
+                extra_data.append(ck)
         return {
             "documents": documents,
             "ids": chunk_ids,
             "metadatas": metadatas,
-            "doc_id": doc_id
+            "doc_id": doc_id,
+            "extra_data": extra_data
         }
+
+    def tokenize_chunks(self, chunks, doc, eng):
+        res = []
+        # wrap up as es documents
+        for ck in chunks:
+            if len(ck.strip()) == 0:
+                continue
+            print("--", ck)
+            d = copy.deepcopy(doc)
+            ck = self.remove_tag(ck)
+            tokenize(d, ck, eng)
+            res.append(d)
+        return res
+
+    def remove_tag(self, txt):
+        return re.sub(r"@@[\t0-9.-]+?##", "", txt)

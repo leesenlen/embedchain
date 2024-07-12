@@ -466,6 +466,7 @@ def validate_config(config_data):
             Optional("embedder"): {
                 Optional("provider"): Or(
                     "openai",
+                    "local",
                     "gpt4all",
                     "huggingface",
                     "vertexai",
@@ -485,6 +486,7 @@ def validate_config(config_data):
             Optional("embedding_model"): {
                 Optional("provider"): Or(
                     "openai",
+                    "local"
                     "gpt4all",
                     "huggingface",
                     "vertexai",
