@@ -612,7 +612,7 @@ class EmbedChain(JSONSerializable):
             match_threshold: float = 0.5,
             rerank: bool = True,
             top_k: int = 8,
-            rerank_discard_threshold=0.01,
+            rerank_discard_threshold=0.05,
             **kwargs: dict[str, Any],
     ) -> Union[list[tuple[str, str, str]], list[str]]:
 
