@@ -22,7 +22,7 @@ class ESQueryBuilder:
             "important_tks^20",
             "content_ltks^2",
             "content_sm_ltks",
-            "text"
+            "text^10"
         ]
         self.es = es
 
