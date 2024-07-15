@@ -21,7 +21,9 @@ class ESQueryBuilder:
             "important_kwd^30",
             "important_tks^20",
             "content_ltks^2",
-            "content_sm_ltks"]
+            "content_sm_ltks",
+            "text"
+        ]
         self.es = es
 
     @dataclass
