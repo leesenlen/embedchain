@@ -469,7 +469,8 @@ class ElasticsearchDB(BaseVectorDB):
             else:
                 tokens_num = self.num_tokens_from_messages(context["content_with_weight"], model)
             sum_tokens += tokens_num
-            context["context"] = context["content_with_weight"]
+            context["context"] = context["content_with_weight"] if context.get("content_with_weight") \
+                else context["text"]
             context["id"] = _id  # es文档id
             context["tokens_num"] = tokens_num # token计数
             context["score"] = result.scores[i] # 文档得分
@@ -477,8 +478,10 @@ class ElasticsearchDB(BaseVectorDB):
 
             if rerank and os.getenv("RERANK_URL", ""):
                 context["rerank_score"] = result.rerank_scores[i]
-            del context["content_with_weight"]
-            del context["content_ltks"]
+            if context.get("content_with_weight"):
+                del context["content_with_weight"]
+            if context.get("content_ltks"):
+                del context["content_ltks"]
             contexts.append(context)
             if sum_tokens > knowledge_tokens:
                 break
