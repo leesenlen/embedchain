@@ -157,8 +157,9 @@ class BaseChunker(JSONSerializable):
     def get_word_count(documents) -> int:
         return sum([len(document.split(" ")) for document in documents])
 
-    def request_ocr_with_error_handling(self, src, _type, timeout=60*2):
-        assert _type in ["pdf", "jpg", "jpeg", "png", "bmp", "tif", "tiff"], f"Invalid ocr file type {_type}"
+    def request_ocr_with_error_handling(self, src, _type, timeout=60*2, zoomin=3):
+        assert _type in ["pdf", "jpg", "jpeg", "png", "bmp", "tif", "tiff", "image"], f"Invalid ocr file type {_type}"
+        logging.info("start to request ocr...")
         ocr_url = os.getenv("OCR_URL", "")
         if not ocr_url:
             raise EnvironmentError("OCR_URL is not set, please set OCR_URL environment variable")
@@ -176,7 +177,8 @@ class BaseChunker(JSONSerializable):
             with open(src, "rb") as file:
                 files = {
                     "file_type": (None, _type),
-                    "file": (src, file.read(), mime_type)
+                    "file": (src, file.read(), mime_type),
+                    "zoomin": (None, zoomin)
                 }
             response = requests.post(ocr_url, files=files, timeout=timeout)
         except requests.exceptions.ConnectionError:
@@ -193,6 +195,7 @@ class BaseChunker(JSONSerializable):
         if response.status_code != 200:
             logging.exception(f"OCR_URL {ocr_url} request failed with status code {response.status_code}")
             return {}
+        logging.info("request OCR succeeded!")
         return response.json()
 
     def get_subject_from_filepath(self, filepath):

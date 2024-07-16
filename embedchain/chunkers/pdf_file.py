@@ -1,3 +1,4 @@
+import os.path
 import re
 import traceback
 import datetime
@@ -33,7 +34,8 @@ class PdfFileChunker(BaseChunker):
 
     def chunks(self, loader, src, metadata: Optional[dict[str, Any]] = None, config: Optional[ChunkerConfig] = None):
         self.pdf = pdfplumber.open(src) if isinstance(src, str) else pdfplumber.open(src)
-        self.page_images = [p.to_image(resolution=72 * 3).annotated for i, p in enumerate(self.pdf.pages)]
+        self.zoomin = self.determine_scaling(src, self.pdf.pages[0])
+        self.page_images = [p.to_image(resolution=72 * self.zoomin).annotated for i, p in enumerate(self.pdf.pages)]
         self.page_from = 0
         self.page_to = len(self.pdf.pages)
         documents = []
@@ -108,7 +110,7 @@ class PdfFileChunker(BaseChunker):
         调用sailvan_OCR进行行OCR解析，表格识别，布局识别。然后进行页面处理
         """
         timeout = len(self.pdf.pages) * 10
-        result = self.request_ocr_with_error_handling(src, "pdf", timeout=timeout)
+        result = self.request_ocr_with_error_handling(src, "pdf", timeout=timeout, zoomin=self.zoomin)
         # OCR请求失败时，走默认的pdf解析，保证pdf正常解析
         if not result:
             return [], []
@@ -117,7 +119,7 @@ class PdfFileChunker(BaseChunker):
             tbls = result["tables"]
             page_cum_height = result["page_cum_height"]
 
-            sections = [(b["text"], self._line_tag(b, 3, page_cum_height)) for b in layout]
+            sections = [(b["text"], self._line_tag(b, self.zoomin, page_cum_height)) for b in layout]
             res = tokenize_table(tbls, doc, False)
             return sections, res
 
@@ -163,7 +165,7 @@ class PdfFileChunker(BaseChunker):
             print("--", ck)
             d = copy.deepcopy(doc)
             try:
-                d["image"], poss = self.crop(ck, need_position=True)
+                d["image"], poss = self.crop(ck, ZM=self.zoomin, need_position=True)
                 add_positions(d, poss)
                 ck = self.remove_tag(ck)
             except NotImplementedError:
@@ -258,3 +260,21 @@ class PdfFileChunker(BaseChunker):
         if need_position:
             return pic, positions
         return pic
+
+    def determine_scaling(self, src, first_page, target_dpi=72, max_pixel_count=800 * 800, max_file_size_mb=10):
+        """
+        根据文件大小，第一页像素点判断是否需要缩放
+        """
+        width_pt, height_pt = first_page.width, first_page.height
+        width_in, height_in = width_pt / 72, height_pt / 72
+        width_px = int(width_in * target_dpi)
+        height_px = int(height_in * target_dpi)
+        total_pixels = width_px * height_px
+        file_size_mb = os.path.getsize(src) / (1024 * 1024)
+        if file_size_mb > max_file_size_mb:
+            zoomin = 1
+        elif total_pixels < max_pixel_count:
+            zoomin = 3
+        else:
+            zoomin = 1
+        return zoomin
