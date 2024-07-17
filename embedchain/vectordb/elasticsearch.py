@@ -464,7 +464,9 @@ class ElasticsearchDB(BaseVectorDB):
         sum_tokens = 0
         # 默认使用rerank
         if rerank and os.getenv("RERANK_URL", ""):
-            self.rerank(input_query[0], result, discard_threshold=rerank_discard_threshold, top_k=top_k)
+            is_logical_knowledge = kwargs.get("is_logical_knowledge", False)
+            self.rerank(input_query[0], result, discard_threshold=rerank_discard_threshold, top_k=top_k,
+                        is_logical_knowledge=is_logical_knowledge)
         for i, _id in enumerate(result.ids):
             context = result.field[_id]
             if 'tokens_num' in context['metadata']:
@@ -739,7 +741,7 @@ class ElasticsearchDB(BaseVectorDB):
         self.client.delete_by_query(index=self._get_index(), body=query)
         self.client.indices.refresh(index=self._get_index())
 
-    def rerank(self, query, docs, discard_threshold=0.01, top_k=8) -> None:
+    def rerank(self, query, docs, discard_threshold=0.01, top_k=8, is_logical_knowledge=False) -> None:
         """
         对搜索到的结果，进行rerank重排序，剔除置信度较低的结果
         :param docs: 文档
@@ -753,6 +755,10 @@ class ElasticsearchDB(BaseVectorDB):
                 contents.append(docs.field[_id]["content_with_weight"])
             else:
                 contents.append(docs.field[_id]["text"])
+        if is_logical_knowledge:
+            query = f"根据公司计算规则，`{query}`需要哪些背景知识及上下文信息?"
+            discard_threshold = discard_threshold * 0.01
+            logging.info(f"逻辑库请求，调整rerank参数. query:{query}, discard_threshold: {discard_threshold}")
         rerank_scores = requests.post(rerank_url, json={"question": query, "docs": contents}).json()["scores"]
         combined_list = [(rerank_score, _id, score) for rerank_score, _id, score in zip(rerank_scores, docs.ids, docs.scores) if
                          rerank_score >= discard_threshold]
