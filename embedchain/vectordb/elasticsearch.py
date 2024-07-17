@@ -1,6 +1,7 @@
 import logging
 import requests
 import os
+import re
 from typing import Any, Optional, Union
 from embedchain.rag.nlp.search import ESQueryBuilder
 
@@ -188,6 +189,8 @@ class ElasticsearchDB(BaseVectorDB):
         documents_list = self.split_list(documents, self.BATCH_SIZE)
         embeddings_list = []
         for documents_chunk in documents_list:
+            documents_chunk = [re.sub(r"</?(table|td|caption|tr|th)( [^<>]{0,12})?>", " ", each)
+                               for each in documents_chunk]
             embeddings_chunk = self.embedder.embedding_fn(documents_chunk)
             embeddings_list.append(embeddings_chunk)
 
