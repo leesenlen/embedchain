@@ -1,6 +1,6 @@
 import base64
 import hashlib
-import logging
+from embedchain.config.log_conf import logger
 import os
 from email import message_from_bytes
 from email.utils import parsedate_to_datetime
@@ -114,7 +114,7 @@ class GmailLoader(BaseLoader):
     def load_data(self, query: str):
         reader = GmailReader(query=query)
         emails = reader.load_emails()
-        logging.info(f"Gmail Loader: {len(emails)} emails found for query '{query}'")
+        logger.info(f"Gmail Loader: {len(emails)} emails found for query '{query}'")
 
         data = []
         for email in emails:

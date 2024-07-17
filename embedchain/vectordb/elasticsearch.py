@@ -1,4 +1,4 @@
-import logging
+from embedchain.config.log_conf import logger
 import requests
 import os
 import re
@@ -71,7 +71,7 @@ class ElasticsearchDB(BaseVectorDB):
         """
         This method is needed because `embedder` attribute needs to be set externally before it can be initialized.
         """
-        logging.info(self.client.info())
+        logger.info(self.client.info())
         index_settings = {
             "mappings": {
                 "properties": {
@@ -450,7 +450,7 @@ class ElasticsearchDB(BaseVectorDB):
         start_time = datetime.now()
         # knn与关键字一起时加过滤条件需要都加上，只加在query里knn并不会生效
         input_query_vector = self.embedder.embedding_fn(input_query)
-        logging.info(f"查询作向量化耗时：{(datetime.now() - start_time).total_seconds()}")
+        logger.info(f"查询作向量化耗时：{(datetime.now() - start_time).total_seconds()}")
         # 如果使用了rerank模型，可以多召回文档，再通过rerank去除置信度低的
         if rerank:
             retrieve_num = top_k * 5
@@ -477,8 +477,8 @@ class ElasticsearchDB(BaseVectorDB):
             context["context"] = context["content_with_weight"] if context.get("content_with_weight") \
                 else context["text"]
             context["id"] = _id  # es文档id
-            context["tokens_num"] = tokens_num # token计数
-            context["score"] = result.scores[i] # 文档得分
+            context["tokens_num"] = tokens_num  # token计数
+            context["score"] = result.scores[i]  # 文档得分
             context.update(context['metadata'])
 
             if rerank and os.getenv("RERANK_URL", ""):
@@ -497,17 +497,17 @@ class ElasticsearchDB(BaseVectorDB):
         # _source = ["text", "metadata"]
         # if match_weight == 1 and knn_weight == 0:
         #     contexts = self.match_query(input_query[0], _source, and_conditions, match_weight, model)
-        #     logging.info(f"关键字搜索耗时：{(datetime.now() - start_time).total_seconds()}")
+        #     logger.info(f"关键字搜索耗时：{(datetime.now() - start_time).total_seconds()}")
         # elif match_weight == 0 and knn_weight == 1:
         #     contexts = self.knn_query(query_vector, _source, and_conditions, knn_weight, model)
-        #     logging.info(f"knn语义搜索耗时：{(datetime.now() - start_time).total_seconds()}")
+        #     logger.info(f"knn语义搜索耗时：{(datetime.now() - start_time).total_seconds()}")
         # else:
         #     match_contexts = self.match_query(input_query[0], _source, and_conditions, match_weight, model)
-        #     logging.info(f"关键字搜索耗时：{(datetime.now() - start_time).total_seconds()}")
+        #     logger.info(f"关键字搜索耗时：{(datetime.now() - start_time).total_seconds()}")
         #     knn_contexts = self.knn_query(query_vector, _source, and_conditions, knn_weight, model)
-        #     logging.info(f"knn语义搜索耗时：{(datetime.now() - start_time).total_seconds()}")
+        #     logger.info(f"knn语义搜索耗时：{(datetime.now() - start_time).total_seconds()}")
         #     contexts = self.reciprocal_rank_fusion(match_contexts, knn_contexts)
-        #     logging.info(f"混合搜索耗时：{(datetime.now() - start_time).total_seconds()}")
+        #     logger.info(f"混合搜索耗时：{(datetime.now() - start_time).total_seconds()}")
         #
         # # token计数不能超过knowledge_tokens，默认6000
         # # es获取的文档个数不能超过10
@@ -633,14 +633,13 @@ class ElasticsearchDB(BaseVectorDB):
             encoding = tiktoken.get_encoding("cl100k_base")
         return len(encoding.encode(messages))
 
-    def query(
-            self,
-            input_query: list[str],
-            n_results: int,
-            where: dict[str, any],
-            citations: bool = False,
-            **kwargs: Optional[dict[str, Any]],
-    ) -> Union[list[tuple[str, dict]], list[str]]:
+    def query(self,
+              input_query: list[str],
+              n_results: int,
+              where: dict[str, any],
+              citations: bool = False,
+              **kwargs: Optional[dict[str, Any]],
+              ) -> Union[list[tuple[str, dict]], list[str]]:
         """
         query contents from vector database based on vector similarity
 
@@ -758,9 +757,10 @@ class ElasticsearchDB(BaseVectorDB):
         if is_logical_knowledge:
             query = f"根据公司计算规则，`{query}`需要哪些背景知识及上下文信息?"
             discard_threshold = discard_threshold * 0.01
-            logging.info(f"逻辑库请求，调整rerank参数. query:{query}, discard_threshold: {discard_threshold}")
+            logger.info(f"逻辑库请求，调整rerank参数. query:{query}, discard_threshold: {discard_threshold}")
         rerank_scores = requests.post(rerank_url, json={"question": query, "docs": contents}).json()["scores"]
-        combined_list = [(rerank_score, _id, score) for rerank_score, _id, score in zip(rerank_scores, docs.ids, docs.scores) if
+        combined_list = [(rerank_score, _id, score) for rerank_score, _id, score in
+                         zip(rerank_scores, docs.ids, docs.scores) if
                          rerank_score >= discard_threshold]
         combined_list.sort(key=lambda x: x[0], reverse=True)
         if len(combined_list) > top_k:
@@ -770,4 +770,3 @@ class ElasticsearchDB(BaseVectorDB):
             docs.rerank_scores = list(rerank_scores)
         else:
             docs.ids, docs.rerank_scores, docs.scores = [], [], []
-

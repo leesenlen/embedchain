@@ -1,4 +1,4 @@
-import logging
+from embedchain.config.log_conf import logger
 from typing import Any, Optional
 
 from embedchain.loaders.base_loader import BaseLoader
@@ -32,7 +32,7 @@ class MySQLLoader(BaseLoader):
             self.connection = sqlconnector.connection.MySQLConnection(**config)
             self.cursor = self.connection.cursor(dictionary=True)
         except (sqlconnector.Error, IOError) as err:
-            logging.info(f"Connection failed: {err}")
+            logger.info(f"Connection failed: {err}")
             raise ValueError(
                 f"Unable to connect with the given config: {config}.",
                 "Please provide the correct configuration to load data from you MySQL DB. \

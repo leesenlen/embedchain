@@ -1,5 +1,5 @@
 import hashlib
-import logging
+from embedchain.config.log_conf import logger
 import time
 from typing import Any, Optional
 
@@ -35,7 +35,7 @@ class DiscourseLoader(BaseLoader):
         try:
             response.raise_for_status()
         except Exception as e:
-            logging.error(f"Failed to load post {post_id}: {e}")
+            logger.error(f"Failed to load post {post_id}: {e}")
             return
         response_data = response.json()
         post_contents = clean_string(response_data.get("raw"))
@@ -56,7 +56,7 @@ class DiscourseLoader(BaseLoader):
         self._check_query(query)
         data = []
         data_contents = []
-        logging.info(f"Searching data on discourse url: {self.domain}, for query: {query}")
+        logger.info(f"Searching data on discourse url: {self.domain}, for query: {query}")
         search_url = f"{self.domain}search.json?q={query}"
         response = requests.get(search_url)
         try:

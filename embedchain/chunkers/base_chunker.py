@@ -1,5 +1,5 @@
 import hashlib
-import logging
+from embedchain.config.log_conf import logger
 import traceback
 import requests
 from typing import Optional, Any
@@ -25,7 +25,7 @@ class BaseChunker(JSONSerializable):
         extra_data = []
         idMap = {}
         min_chunk_size = config.min_chunk_size if config is not None else 1
-        logging.info(f"[INFO] Skipping chunks smaller than {min_chunk_size} characters")
+        logger.info(f"[INFO] Skipping chunks smaller than {min_chunk_size} characters")
 
         if metadata is None:
             metadata = {}
@@ -100,7 +100,7 @@ class BaseChunker(JSONSerializable):
         chunk_ids = []
         id_map = {}
         min_chunk_size = config.min_chunk_size if config is not None else 1
-        logging.info(f"Skipping chunks smaller than {min_chunk_size} characters")
+        logger.info(f"Skipping chunks smaller than {min_chunk_size} characters")
         data_result = loader.load_data(src)
         data_records = data_result["data"]
         doc_id = data_result["doc_id"]
@@ -159,7 +159,7 @@ class BaseChunker(JSONSerializable):
 
     def request_ocr_with_error_handling(self, src, _type, timeout=60*2, zoomin=3):
         assert _type in ["pdf", "jpg", "jpeg", "png", "bmp", "tif", "tiff", "image"], f"Invalid ocr file type {_type}"
-        logging.info("start to request ocr...")
+        logger.info("start to request ocr...")
         ocr_url = os.getenv("OCR_URL", "")
         if not ocr_url:
             raise EnvironmentError("OCR_URL is not set, please set OCR_URL environment variable")
@@ -182,20 +182,20 @@ class BaseChunker(JSONSerializable):
                 }
             response = requests.post(ocr_url, files=files, timeout=timeout)
         except requests.exceptions.ConnectionError:
-            logging.error(f"OCR_URL {ocr_url} connect failed")
-            logging.error(traceback.format_exc())
+            logger.error(f"OCR_URL {ocr_url} connect failed")
+            logger.error(traceback.format_exc())
             return {}
         except requests.exceptions.Timeout:
-            logging.error(f"OCR_URL {ocr_url} request timeout over {timeout} seconds")
-            logging.error(traceback.format_exc())
+            logger.error(f"OCR_URL {ocr_url} request timeout over {timeout} seconds")
+            logger.error(traceback.format_exc())
             return {}
         except Exception:
-            logging.exception(traceback.format_exc())
+            logger.exception(traceback.format_exc())
             return {}
         if response.status_code != 200:
-            logging.exception(f"OCR_URL {ocr_url} request failed with status code {response.status_code}")
+            logger.exception(f"OCR_URL {ocr_url} request failed with status code {response.status_code}")
             return {}
-        logging.info("request OCR succeeded!")
+        logger.info("request OCR succeeded!")
         return response.json()
 
     def get_subject_from_filepath(self, filepath):

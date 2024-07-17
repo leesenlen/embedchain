@@ -1,5 +1,5 @@
 import json
-import logging
+from embedchain.config.log_conf import logger
 from string import Template
 from typing import Any, Type, TypeVar, Union
 
@@ -57,7 +57,7 @@ class JSONSerializable:
         try:
             return json.dumps(self, default=self._auto_encoder, ensure_ascii=False)
         except Exception as e:
-            logging.error(f"Serialization error: {e}")
+            logger.error(f"Serialization error: {e}")
             return "{}"
 
     @classmethod
@@ -79,7 +79,7 @@ class JSONSerializable:
         try:
             return json.loads(json_str, object_hook=cls._auto_decoder)
         except Exception as e:
-            logging.error(f"Deserialization error: {e}")
+            logger.error(f"Deserialization error: {e}")
             # Return a default instance in case of failure
             return cls()
 

@@ -1,5 +1,5 @@
 import importlib
-import logging
+from embedchain.config.log_conf import logger
 import os
 from collections.abc import Generator
 from typing import Any, Optional, Union
@@ -36,7 +36,7 @@ class GoogleLlm(BaseLlm):
 
     def _get_answer(self, prompt: str) -> Union[str, Generator[Any, Any, None]]:
         model_name = self.config.model or "gemini-pro"
-        logging.info(f"Using Google LLM model: {model_name}")
+        logger.info(f"Using Google LLM model: {model_name}")
         model = genai.GenerativeModel(model_name=model_name)
 
         generation_config_params = {

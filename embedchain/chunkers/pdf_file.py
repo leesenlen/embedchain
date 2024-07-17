@@ -8,7 +8,7 @@ from typing import Optional, Any
 import numpy as np
 from PIL import Image
 import pdfplumber
-import logging
+from embedchain.config.log_conf import logger
 from embedchain.rag.nlp import rag_tokenizer, naive_merge, tokenize_table, tokenize, add_positions
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
@@ -42,7 +42,7 @@ class PdfFileChunker(BaseChunker):
         chunk_ids = []
         idMap = {}
         min_chunk_size = config.min_chunk_size if config is not None else 1
-        logging.info(f"[INFO] Skipping chunks smaller than {min_chunk_size} characters")
+        logger.info(f"[INFO] Skipping chunks smaller than {min_chunk_size} characters")
 
         if metadata is None:
             metadata = {}
@@ -58,7 +58,7 @@ class PdfFileChunker(BaseChunker):
         cks = self.chunk_with_layout(sections, res, config, doc)
         # OCR异常或者无法处理的情况，直接使用pdf解析
         if not cks:
-            logging.info(f"OCR and layout recognition failed, using pdf parser!!!")
+            logger.info(f"OCR and layout recognition failed, using pdf parser!!!")
             data_result = loader.load_data(src)
             data_records = data_result["data"]
             for data in data_records:
@@ -171,8 +171,8 @@ class PdfFileChunker(BaseChunker):
             except NotImplementedError:
                 pass
             except Exception:
-                logging.exception(traceback.format_exc())
-                logging.exception("crop img error")
+                logger.exception(traceback.format_exc())
+                logger.exception("crop img error")
             tokenize(d, ck, eng)
             res.append(d)
         return res

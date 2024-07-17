@@ -1,4 +1,4 @@
-import logging
+from embedchain.config.log_conf import logger
 import os  # noqa: F401
 from typing import Any
 
@@ -24,12 +24,12 @@ def gptcache_data_manager(vector_dimension):
 
 
 def gptcache_data_convert(cache_data):
-    logging.info("[Cache] Cache hit, returning cache data...")
+    logger.info("[Cache] Cache hit, returning cache data...")
     return cache_data
 
 
 def gptcache_update_cache_callback(llm_data, update_cache_func, *args, **kwargs):
-    logging.info("[Cache] Cache missed, updating cache...")
+    logger.info("[Cache] Cache missed, updating cache...")
     update_cache_func(Answer(llm_data, CacheDataType.STR))
     return llm_data
 

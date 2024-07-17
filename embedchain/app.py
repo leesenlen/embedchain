@@ -2,6 +2,7 @@ import ast
 import concurrent.futures
 import json
 import logging
+from embedchain.config.log_conf import logger
 import os
 import uuid
 from typing import Any, Optional, Union
@@ -69,7 +70,7 @@ class App(EmbedChain):
         :type llm: BaseLlm, optional
         :param config_data: Config dictionary, defaults to None
         :type config_data: dict, optional
-        :param log_level: Log level to use, defaults to logging.WARN
+        :param log_level: Log level to use, defaults to logger.WARN
         :type log_level: int, optional
         :param auto_deploy: Whether to deploy the pipeline automatically, defaults to False
         :type auto_deploy: bool, optional
@@ -358,7 +359,7 @@ class App(EmbedChain):
         elif config and isinstance(config, dict):
             config_data = config
         else:
-            logging.error(
+            logger.error(
                 "Please provide either a config file path (YAML or JSON) or a config dictionary. Falling back to defaults because no config is provided.",  # noqa: E501
             )
             config_data = {}
@@ -478,12 +479,12 @@ class App(EmbedChain):
             EvalMetric.GROUNDEDNESS.value,
         ]
 
-        logging.info(f"Collecting data from {len(queries)} questions for evaluation...")
+        logger.info(f"Collecting data from {len(queries)} questions for evaluation...")
         dataset = []
         for q, a, c in zip(queries, answers, contexts):
             dataset.append(EvalData(question=q, answer=a, contexts=c))
 
-        logging.info(f"Evaluating {len(dataset)} data points...")
+        logger.info(f"Evaluating {len(dataset)} data points...")
         result = {}
         with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
             future_to_metric = {executor.submit(self._eval, dataset, metric): metric for metric in metrics}

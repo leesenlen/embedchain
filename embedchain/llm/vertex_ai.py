@@ -1,5 +1,5 @@
 import importlib
-import logging
+from embedchain.config.log_conf import logger
 from typing import Optional
 
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
@@ -28,7 +28,7 @@ class VertexAILlm(BaseLlm):
     @staticmethod
     def _get_answer(prompt: str, config: BaseLlmConfig) -> str:
         if config.top_p and config.top_p != 1:
-            logging.warning("Config option `top_p` is not supported by this model.")
+            logger.warning("Config option `top_p` is not supported by this model.")
 
         messages = BaseLlm._get_messages(prompt, system_prompt=config.system_prompt)
 

@@ -1,4 +1,4 @@
-import logging
+from embedchain.config.log_conf import logger
 from typing import Any, Optional, Union
 
 from chromadb import Collection, QueryResult
@@ -47,7 +47,7 @@ class ChromaDB(BaseVectorDB):
                     setattr(self.settings, key, value)
 
         if self.config.host and self.config.port:
-            logging.info(f"Connecting to ChromaDB server: {self.config.host}:{self.config.port}")
+            logger.info(f"Connecting to ChromaDB server: {self.config.host}:{self.config.port}")
             self.settings.chroma_server_host = self.config.host
             self.settings.chroma_server_http_port = self.config.port
             self.settings.chroma_api_impl = "chromadb.api.fastapi.FastAPI"

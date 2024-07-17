@@ -1,5 +1,5 @@
 import hashlib
-import logging
+from embedchain.config.log_conf import logger
 import os
 
 from embedchain.helpers.json_serializable import register_deserializable
@@ -102,7 +102,7 @@ class DiscordLoader(BaseLoader):
 
         class DiscordClient(discord.Client):
             async def on_ready(self) -> None:
-                logging.info("Logged on as {0}!".format(self.user))
+                logger.info("Logged on as {0}!".format(self.user))
                 try:
                     channel = self.get_channel(int(channel_id))
                     if not isinstance(channel, discord.TextChannel):
@@ -121,7 +121,7 @@ class DiscordLoader(BaseLoader):
                                 messages.append(DiscordLoader._format_message(thread_message))
 
                 except Exception as e:
-                    logging.error(e)
+                    logger.error(e)
                     await self.close()
                 finally:
                     await self.close()

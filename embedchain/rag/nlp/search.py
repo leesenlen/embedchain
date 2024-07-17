@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import re
-import logging
+from embedchain.config.log_conf import logger
 from copy import deepcopy
 
 from elasticsearch_dsl import Q, Search
@@ -84,14 +84,14 @@ class ESQueryBuilder:
             if "highlight" in s:
                 del s["highlight"]
             q_vec = s["knn"]["query_vector"]
-        logging.info("【Q】: {}".format(json.dumps(s)))
+        logger.info("【Q】: {}".format(json.dumps(s)))
         res = self.es.search(index=index_name, body=s, _source=src)
         # for DEBUG
         # s1 = {"query": s["query"]}
         # s2 = {"knn": s["knn"]}
         # res1 = self.es.search(index=index_name, body=s1, _source=src)
         # res2 = self.es.search(index=index_name, body=s2, _source=src)
-        logging.info("TOTAL: {}".format(self.getTotal(res)))
+        logger.info("TOTAL: {}".format(self.getTotal(res)))
         if self.getTotal(res) == 0 and "knn" in s:
             bqry, _ = self.qryr.question(question, min_match="10%")
             bqry = self.qryr.add_filters(bqry, add_conditions)
@@ -99,7 +99,7 @@ class ESQueryBuilder:
             s["knn"]["filter"] = bqry.to_dict()
             s["knn"]["similarity"] = 0.5
             res = self.es.search(index=index_name, body=s, _source=src)
-            logging.info("【Q】: {}".format(json.dumps(s)))
+            logger.info("【Q】: {}".format(json.dumps(s)))
 
         kwds = set([])
         for k in keywords:
@@ -214,7 +214,7 @@ class ESQueryBuilder:
                 continue
             idx.append(i)
             pieces_.append(t)
-        logging.info("{} => {}".format(answer, pieces_))
+        logger.info("{} => {}".format(answer, pieces_))
         if not pieces_:
             return answer, set([])
 
@@ -235,7 +235,7 @@ class ESQueryBuilder:
                                                                 chunks_tks,
                                                                 tkweight, vtweight)
                 mx = np.max(sim) * 0.99
-                logging.info("{} SIM: {}".format(pieces_[i], mx))
+                logger.info("{} SIM: {}".format(pieces_[i], mx))
                 if mx < thr:
                     continue
                 cites[idx[i]] = list(

@@ -1,4 +1,4 @@
-import logging
+from embedchain.config.log_conf import logger
 
 from flask import Flask, jsonify, request
 
@@ -17,7 +17,7 @@ def add():
             App().add(url_or_text, data_type=data_type)
             return jsonify({"data": f"Added {data_type}: {url_or_text}"}), 200
         except Exception:
-            logging.exception(f"Failed to add {data_type=}: {url_or_text=}")
+            logger.exception(f"Failed to add {data_type=}: {url_or_text=}")
             return jsonify({"error": f"Failed to add {data_type}: {url_or_text}"}), 500
     return jsonify({"error": "Invalid request. Please provide 'data_type' and 'url_or_text' in JSON format."}), 400
 
@@ -31,7 +31,7 @@ def query():
             response = App().query(question)
             return jsonify({"data": response}), 200
         except Exception:
-            logging.exception(f"Failed to query {question=}")
+            logger.exception(f"Failed to query {question=}")
             return jsonify({"error": "An error occurred. Please try again!"}), 500
     return jsonify({"error": "Invalid request. Please provide 'question' in JSON format."}), 400
 
@@ -45,7 +45,7 @@ def chat():
             response = App().chat(question)
             return jsonify({"data": response}), 200
         except Exception:
-            logging.exception(f"Failed to chat {question=}")
+            logger.exception(f"Failed to chat {question=}")
             return jsonify({"error": "An error occurred. Please try again!"}), 500
     return jsonify({"error": "Invalid request. Please provide 'question' in JSON format."}), 400
 

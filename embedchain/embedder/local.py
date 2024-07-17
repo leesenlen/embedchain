@@ -1,7 +1,7 @@
 import os
 from typing import Optional
 import requests
-import logging
+from embedchain.config.log_conf import logger
 
 from embedchain.config import BaseEmbedderConfig
 from embedchain.embedder.base import BaseEmbedder
@@ -30,8 +30,8 @@ class LocalEmbedder(BaseEmbedder):
         return response
 
     def to_embeddings(self, inputs: list):
-        logging.info(f"embedding docs: {inputs}")
+        logger.info(f"embedding docs: {inputs}")
         response = self.requests_local_embedding(inputs)
         result = response["data"]
-        logging.info(f"embedding successfully: {str(result)[:100]}")
+        logger.info(f"embedding successfully: {str(result)[:100]}")
         return result

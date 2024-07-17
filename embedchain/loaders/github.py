@@ -1,6 +1,6 @@
 import concurrent.futures
 import hashlib
-import logging
+from embedchain.config.log_conf import logger
 import os
 import re
 import shlex
@@ -44,7 +44,7 @@ class GithubLoader(BaseLoader):
         try:
             self.client = Github(token)
         except Exception as e:
-            logging.error(f"GithubLoader failed to initialize client: {e}")
+            logger.error(f"GithubLoader failed to initialize client: {e}")
             self.client = None
 
     def _github_search_code(self, query: str):
@@ -53,7 +53,7 @@ class GithubLoader(BaseLoader):
         results = self.client.search_code(query)
         for result in tqdm(results, total=results.totalCount, desc="Loading code files from github"):
             url = result.html_url
-            logging.info(f"Added data from url: {url}")
+            logger.info(f"Added data from url: {url}")
             content = result.decoded_content.decode("utf-8")
             metadata = {
                 "url": url,
@@ -81,13 +81,13 @@ class GithubLoader(BaseLoader):
                 ) from e
 
             if os.path.exists(local_path):
-                logging.info("Repository already exists. Fetching updates...")
+                logger.info("Repository already exists. Fetching updates...")
                 repo = Repo(local_path)
-                logging.info("Fetch completed.")
+                logger.info("Fetch completed.")
             else:
-                logging.info("Cloning repository...")
+                logger.info("Cloning repository...")
                 repo = Repo.clone_from(repo_url, local_path)
-                logging.info("Clone completed.")
+                logger.info("Clone completed.")
             return repo.head.commit.tree
 
         def _get_repo_tree_contents(repo_path, tree, progress_bar):
@@ -99,7 +99,7 @@ class GithubLoader(BaseLoader):
                     try:
                         contents = subtree.data_stream.read().decode("utf-8")
                     except Exception:
-                        logging.warning(f"Failed to read file: {subtree.path}")
+                        logger.warning(f"Failed to read file: {subtree.path}")
                         progress_bar.update(1) if progress_bar else None
                         continue
 
@@ -125,7 +125,7 @@ class GithubLoader(BaseLoader):
     def _github_search_repo(self, query: str) -> list[dict]:
         """Search GitHub repo."""
         data = []
-        logging.info(f"Searching github repos with query: {query}")
+        logger.info(f"Searching github repos with query: {query}")
         results = self.client.search_repositories(query)
         # Add repo urls and descriptions
         urls = list(map(lambda x: x.html_url, results))
@@ -143,7 +143,7 @@ class GithubLoader(BaseLoader):
         # Add repo contents
         for result in results:
             clone_url = result.clone_url
-            logging.info(f"Cloning repository: {clone_url}")
+            logger.info(f"Cloning repository: {clone_url}")
             data = self._get_github_repo_data(clone_url)
         return data
 
@@ -152,17 +152,17 @@ class GithubLoader(BaseLoader):
         data = []
 
         query = f"{query} is:{type}"
-        logging.info(f"Searching github for query: {query}")
+        logger.info(f"Searching github for query: {query}")
 
         results = self.client.search_issues(query)
 
-        logging.info(f"Total results: {results.totalCount}")
+        logger.info(f"Total results: {results.totalCount}")
         for result in tqdm(results, total=results.totalCount, desc=f"Loading {type} from github"):
             url = result.html_url
             title = result.title
             body = result.body
             if not body:
-                logging.warning(f"Skipping issue because empty content for: {url}")
+                logger.warning(f"Skipping issue because empty content for: {url}")
                 continue
             labels = " ".join([label.name for label in result.labels])
             issue_comments = result.get_comments()
@@ -191,9 +191,9 @@ class GithubLoader(BaseLoader):
         data = []
 
         query = f"{query} is:discussion"
-        logging.info(f"Searching github repo for query: {query}")
+        logger.info(f"Searching github repo for query: {query}")
         repos_results = self.client.search_repositories(query)
-        logging.info(f"Total repos found: {repos_results.totalCount}")
+        logger.info(f"Total repos found: {repos_results.totalCount}")
         for repo_result in tqdm(repos_results, total=repos_results.totalCount, desc="Loading discussions from github"):
             teams = repo_result.get_teams()
             for team in teams:
@@ -203,7 +203,7 @@ class GithubLoader(BaseLoader):
                     title = discussion.title
                     body = discussion.body
                     if not body:
-                        logging.warning(f"Skipping discussion because empty content for: {url}")
+                        logger.warning(f"Skipping discussion because empty content for: {url}")
                         continue
                     comments = []
                     comments_created_at = []
@@ -285,7 +285,7 @@ class GithubLoader(BaseLoader):
             )
 
         search_types, query = self._get_valid_github_query(search_query)
-        logging.info(f"Searching github for query: {query}, with types: {', '.join(search_types)}")
+        logger.info(f"Searching github for query: {query}, with types: {', '.join(search_types)}")
 
         data = []
 

@@ -1,5 +1,5 @@
 import builtins
-import logging
+from .log_conf import logger
 from collections.abc import Callable
 from importlib import import_module
 from typing import Optional
@@ -27,7 +27,7 @@ class ChunkerConfig(BaseConfig):
         if self.min_chunk_size >= self.chunk_size:
             raise ValueError(f"min_chunk_size {min_chunk_size} should be less than chunk_size {chunk_size}")
         if self.min_chunk_size < self.chunk_overlap:
-            logging.warning(
+            logger.warning(
                 f"min_chunk_size {min_chunk_size} should be greater than chunk_overlap {chunk_overlap}, otherwise it is redundant."  # noqa:E501
             )
 

@@ -1,4 +1,5 @@
 import logging
+from embedchain.config.log_conf import logger
 from typing import Optional
 
 from embedchain.config.base_config import BaseConfig
@@ -36,23 +37,23 @@ class BaseAppConfig(BaseConfig, JSONSerializable):
         defaults to None
         :type collection_name: Optional[str], optional
         """
-        self._setup_logging(log_level)
+        self._setup_logger(log_level)
         self.id = id
         self.collect_metrics = True if (collect_metrics is True or collect_metrics is None) else False
         self.collection_name = collection_name
 
         if db:
             self._db = db
-            logging.warning(
+            logger.warning(
                 "DEPRECATION WARNING: Please supply the database as the second parameter during app init. "
                 "Such as `app(config=config, db=db)`."
             )
 
         if collection_name:
-            logging.warning("DEPRECATION WARNING: Please supply the collection name to the database config.")
+            logger.warning("DEPRECATION WARNING: Please supply the collection name to the database config.")
         return
 
-    def _setup_logging(self, debug_level):
+    def _setup_logger(self, debug_level):
         level = logging.WARNING  # Default level
         if debug_level is not None:
             level = getattr(logging, debug_level.upper(), None)

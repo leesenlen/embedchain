@@ -1,5 +1,5 @@
 import argparse
-import logging
+from embedchain.config.log_conf import logger
 import os
 from typing import Optional
 
@@ -49,7 +49,7 @@ class PoeBot(BaseBot, PoeBot):
                 else None
             )
         except Exception as e:
-            logging.error(f"Error when processing the chat history. Message is being sent without history. Error: {e}")
+            logger.error(f"Error when processing the chat history. Message is being sent without history. Error: {e}")
         answer = self.handle_message(last_message, history)
         yield self.text_event(answer)
 
@@ -66,7 +66,7 @@ class PoeBot(BaseBot, PoeBot):
     #         self.add(data)
     #         response = f"Added data from: {data}"
     #     except Exception:
-    #         logging.exception(f"Failed to add data {data}.")
+    #         logger.exception(f"Failed to add data {data}.")
     #         response = "Some error occurred while adding data."
     #     return response
 
@@ -75,7 +75,7 @@ class PoeBot(BaseBot, PoeBot):
             self.app.llm.set_history(history=history)
             response = self.query(message)
         except Exception:
-            logging.exception(f"Failed to query {message}.")
+            logger.exception(f"Failed to query {message}.")
             response = "An error occurred. Please try again!"
         return response
 

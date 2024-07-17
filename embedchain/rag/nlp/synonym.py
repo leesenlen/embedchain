@@ -1,7 +1,7 @@
 import json
 import os
 import time
-import logging
+from embedchain.config.log_conf import logger
 import re
 from embedchain.constants import ABS_PATH
 
@@ -16,14 +16,14 @@ class Dealer:
         try:
             self.dictionary = json.load(open(path, 'r', encoding="utf-8"))
         except Exception as e:
-            logging.warn("Missing synonym.json")
+            logger.warn("Missing synonym.json")
             self.dictionary = {}
 
         if not redis:
-            logging.warning(
+            logger.warning(
                 "Realtime synonym is disabled, since no redis connection.")
         if not len(self.dictionary.keys()):
-            logging.warning(f"Fail to load synonym")
+            logger.warning(f"Fail to load synonym")
 
         self.redis = redis
         self.load()
@@ -47,7 +47,7 @@ class Dealer:
             d = json.loads(d)
             self.dictionary = d
         except Exception as e:
-            logging.error("Fail to load synonym!" + str(e))
+            logger.error("Fail to load synonym!" + str(e))
 
     def lookup(self, tk):
         self.lookup_num += 1

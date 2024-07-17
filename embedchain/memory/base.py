@@ -1,5 +1,5 @@
 import json
-import logging
+from embedchain.config.log_conf import logger
 import uuid
 from typing import Any, Optional
 
@@ -31,11 +31,11 @@ class ChatHistory:
         try:
             self.db_session.commit()
         except Exception as e:
-            logging.error(f"Error adding chat memory to db: {e}")
+            logger.error(f"Error adding chat memory to db: {e}")
             self.db_session.rollback()
             return None
 
-        logging.info(f"Added chat memory to db with id: {memory_id}")
+        logger.info(f"Added chat memory to db with id: {memory_id}")
         return memory_id
 
     def delete(self, app_id: str, session_id: Optional[str] = None):
@@ -55,7 +55,7 @@ class ChatHistory:
         try:
             self.db_session.commit()
         except Exception as e:
-            logging.error(f"Error deleting chat history: {e}")
+            logger.error(f"Error deleting chat history: {e}")
             self.db_session.rollback()
 
     def get(

@@ -1,5 +1,5 @@
 import hashlib
-import logging
+from embedchain.config.log_conf import logger
 import time
 from xml.etree import ElementTree
 
@@ -90,9 +90,9 @@ class BeehiivLoader(BaseLoader):
                 if is_readable(data):
                     return data
                 else:
-                    logging.warning(f"Page is not readable (too many invalid characters): {link}")
+                    logger.warning(f"Page is not readable (too many invalid characters): {link}")
             except ParserRejectedMarkup as e:
-                logging.error(f"Failed to parse {link}: {e}")
+                logger.error(f"Failed to parse {link}: {e}")
             return None
 
         for link in links:

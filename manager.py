@@ -52,12 +52,13 @@ def insert_md(base_dir):
 
 if __name__ == "__main__":
     # insert_md("E:\project\eip-docs\doc")
-    file_path = "C:\\Users\\admin\\Documents\\docs\\test_ocr.pdf"
+    file_path = "C:\\Users\\admin\\Documents\\docs\\eof.pdf"
+
     # # file_path = "E:\\project\\eip-docs\\doc\\version.md"
     metadata = {'system_doc_id': 1200,
                 'app_id': 2,
                 'knowledge_id': 438,
-                'subject': 'test_ocr',
+                'subject': 'eof',
                 'link': ''}
     doc_id = embedder.upsert(source=file_path, metadata=metadata)
 

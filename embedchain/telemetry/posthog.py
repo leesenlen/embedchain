@@ -1,5 +1,6 @@
 import json
 import logging
+from embedchain.config.log_conf import logger
 import os
 import uuid
 from pathlib import Path
@@ -34,7 +35,7 @@ class AnonymousTelemetry:
         if not self.enabled:
             self.posthog.disabled = True
 
-        # Silence posthog logging
+        # Silence posthog logger
         posthog_logger = logging.getLogger("posthog")
         posthog_logger.disabled = True
 

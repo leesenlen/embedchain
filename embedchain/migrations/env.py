@@ -1,5 +1,5 @@
 import os
-from logging.config import fileConfig
+from logger.config import fileConfig
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
@@ -10,7 +10,7 @@ from embedchain.core.db.models import Base
 # access to the values within the .ini file in use.
 config = context.config
 
-# Interpret the config file for Python logging.
+# Interpret the config file for Python logger.
 # This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)

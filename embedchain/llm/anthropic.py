@@ -1,4 +1,4 @@
-import logging
+from embedchain.config.log_conf import logger
 import os
 from typing import Optional
 
@@ -26,7 +26,7 @@ class AnthropicLlm(BaseLlm):
         )
 
         if config.max_tokens and config.max_tokens != 1000:
-            logging.warning("Config option `max_tokens` is not supported by this model.")
+            logger.warning("Config option `max_tokens` is not supported by this model.")
 
         messages = BaseLlm._get_messages(prompt, system_prompt=config.system_prompt)
 

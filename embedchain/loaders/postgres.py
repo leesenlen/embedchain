@@ -1,5 +1,5 @@
 import hashlib
-import logging
+from embedchain.config.log_conf import logger
 from typing import Any, Optional
 
 from embedchain.loaders.base_loader import BaseLoader
@@ -32,7 +32,7 @@ class PostgresLoader(BaseLoader):
                 conn_params.append(f"{key}={value}")
             config_info = " ".join(conn_params)
 
-        logging.info(f"Connecting to postrgres sql: {config_info}")
+        logger.info(f"Connecting to postrgres sql: {config_info}")
         self.connection = psycopg.connect(conninfo=config_info)
         self.cursor = self.connection.cursor()
 

@@ -1,5 +1,5 @@
 import hashlib
-import logging
+from embedchain.config.log_conf import logger
 
 import requests
 
@@ -87,7 +87,7 @@ class WebPageLoader(BaseLoader):
 
         cleaned_size = len(content)
         if original_size != 0:
-            logging.info(
+            logger.info(
                 f"[{url}] Cleaned page size: {cleaned_size} characters, down from {original_size} (shrunk: {original_size-cleaned_size} chars, {round((1-(cleaned_size/original_size)) * 100, 2)}%)"  # noqa:E501
             )
 

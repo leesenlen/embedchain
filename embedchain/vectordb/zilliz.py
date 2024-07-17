@@ -1,4 +1,4 @@
-import logging
+from embedchain.config.log_conf import logger
 from typing import Any, Optional, Union
 
 from embedchain.config import ZillizDBConfig
@@ -62,7 +62,7 @@ class ZillizVectorDB(BaseVectorDB):
         :type name: str
         """
         if utility.has_collection(name):
-            logging.info(f"[ZillizDB]: found an existing collection {name}, make sure the auto-id is disabled.")
+            logger.info(f"[ZillizDB]: found an existing collection {name}, make sure the auto-id is disabled.")
             self.collection = Collection(name)
         else:
             fields = [

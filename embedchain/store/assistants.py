@@ -1,4 +1,4 @@
-import logging
+from embedchain.config.log_conf import logger
 import os
 import re
 import tempfile
@@ -17,7 +17,7 @@ from embedchain.models.data_type import DataType
 from embedchain.telemetry.posthog import AnonymousTelemetry
 from embedchain.utils.misc import detect_datatype
 
-logging.basicConfig(level=logging.WARN)
+logger.basicConfig(level=logger.WARN)
 
 # Set up the user directory if it doesn't exist already
 Client.setup()
@@ -33,7 +33,7 @@ class OpenAIAssistant:
         model="gpt-4-1106-preview",
         data_sources=None,
         assistant_id=None,
-        log_level=logging.WARN,
+        log_level=logger.WARN,
         collect_metrics=True,
     ):
         self.name = name or "OpenAI Assistant"
@@ -58,7 +58,7 @@ class OpenAIAssistant:
             "data_type": data_type or detect_datatype(source),
         }
         self.telemetry.capture(event_name="add", properties=event_props)
-        logging.info("Data successfully added to the assistant.")
+        logger.info("Data successfully added to the assistant.")
 
     def chat(self, message):
         self._send_message(message)
@@ -156,10 +156,10 @@ class AIAssistant:
         assistant_id=None,
         thread_id=None,
         data_sources=None,
-        log_level=logging.WARN,
+        log_level=logger.WARN,
         collect_metrics=True,
     ):
-        logging.basicConfig(level=log_level)
+        logger.basicConfig(level=log_level)
 
         self.name = name or "AI Assistant"
         self.data_sources = data_sources or []

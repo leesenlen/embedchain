@@ -1,4 +1,4 @@
-import logging
+from embedchain.config.log_conf import logger
 import re
 from string import Template
 from typing import Any, Optional
@@ -146,7 +146,7 @@ class BaseLlmConfig(BaseConfig):
         :raises ValueError: Stream is not boolean
         """
         if template is not None:
-            logging.warning(
+            logger.warning(
                 "The `template` argument is deprecated and will be removed in a future version. "
                 + "Please use `prompt` instead."
             )

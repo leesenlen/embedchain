@@ -1,4 +1,4 @@
-import logging
+from embedchain.config.log_conf import logger
 import os
 
 import discord
@@ -15,7 +15,7 @@ discord_bot_name = os.environ["DISCORD_BOT_NAME"]
 
 class NextJSBot:
     def __init__(self) -> None:
-        logging.info("NextJS Bot powered with embedchain.")
+        logger.info("NextJS Bot powered with embedchain.")
 
     def add(self, _):
         raise ValueError("Add is not implemented yet")
@@ -31,11 +31,11 @@ class NextJSBot:
             try:
                 response = response.json()
             except Exception:
-                logging.error(f"Failed to parse response: {response}")
+                logger.error(f"Failed to parse response: {response}")
                 response = {}
             return response
         except Exception:
-            logging.exception(f"Failed to query {message}.")
+            logger.exception(f"Failed to query {message}.")
             response = "An error occurred. Please try again!"
         return response
 
@@ -49,7 +49,7 @@ NEXTJS_BOT = NextJSBot()
 
 @client.event
 async def on_ready():
-    logging.info(f"User {client.user.name} logged in with id: {client.user.id}!")
+    logger.info(f"User {client.user.name} logged in with id: {client.user.id}!")
 
 
 def _get_question(message):

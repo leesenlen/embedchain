@@ -1,7 +1,7 @@
 import json
 import math
 import re
-import logging
+from embedchain.config.log_conf import logger
 import copy
 
 from embedchain.rag.nlp import rag_tokenizer, term_weight, synonym
@@ -77,7 +77,7 @@ class EsQueryer:
                 continue
             twts = self.tw.weights([tt])
             syns = self.syn.lookup(tt)
-            logging.info(json.dumps(twts, ensure_ascii=False))
+            logger.info(json.dumps(twts, ensure_ascii=False))
             tms = []
             for tk, w in sorted(twts, key=lambda x: x[1] * -1):
                 sm = rag_tokenizer.fine_grained_tokenize(tk).split(" ") if need_fine_grained_tokenize(tk) else []

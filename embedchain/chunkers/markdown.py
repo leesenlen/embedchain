@@ -4,7 +4,7 @@ import hashlib
 import os
 import re
 import datetime
-import logging
+from embedchain.config.log_conf import logger
 import markdown
 from bs4 import BeautifulSoup
 from embedchain.rag.nlp import rag_tokenizer
@@ -42,7 +42,7 @@ class MarkdownChunker(BaseChunker):
         chunk_ids = []
         idMap = {}
         min_chunk_size = config.min_chunk_size if config is not None else 1
-        logging.info(f"[INFO] Skipping chunks smaller than {min_chunk_size} characters")
+        logger.info(f"[INFO] Skipping chunks smaller than {min_chunk_size} characters")
 
         if metadata is None:
             metadata = {}

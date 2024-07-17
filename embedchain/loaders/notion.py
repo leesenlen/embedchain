@@ -1,5 +1,5 @@
 import hashlib
-import logging
+from embedchain.config.log_conf import logger
 import os
 from typing import Any, Optional
 
@@ -98,7 +98,7 @@ class NotionLoader(BaseLoader):
 
         id = source[-32:]
         formatted_id = f"{id[:8]}-{id[8:12]}-{id[12:16]}-{id[16:20]}-{id[20:]}"
-        logging.debug(f"Extracted notion page id as: {formatted_id}")
+        logger.debug(f"Extracted notion page id as: {formatted_id}")
 
         integration_token = os.getenv("NOTION_INTEGRATION_TOKEN")
         reader = NotionPageLoader(integration_token=integration_token)

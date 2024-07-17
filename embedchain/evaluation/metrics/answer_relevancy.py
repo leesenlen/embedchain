@@ -1,5 +1,5 @@
 import concurrent.futures
-import logging
+from embedchain.config.log_conf import logger
 import os
 from string import Template
 from typing import Optional
@@ -88,6 +88,6 @@ class AnswerRelevance(BaseMetric):
                 try:
                     results.append(future.result())
                 except Exception as e:
-                    logging.error(f"Error evaluating answer relevancy for {data}: {e}")
+                    logger.error(f"Error evaluating answer relevancy for {data}: {e}")
 
         return np.mean(results) if results else 0.0

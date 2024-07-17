@@ -1,6 +1,6 @@
 import argparse
 import importlib
-import logging
+from embedchain.config.log_conf import logger
 import signal
 import sys
 
@@ -35,7 +35,7 @@ class WhatsAppBot(BaseBot):
             self.add(data)
             response = f"Added data from: {data}"
         except Exception:
-            logging.exception(f"Failed to add data {data}.")
+            logger.exception(f"Failed to add data {data}.")
             response = "Some error occurred while adding data."
         return response
 
@@ -43,7 +43,7 @@ class WhatsAppBot(BaseBot):
         try:
             response = self.query(message)
         except Exception:
-            logging.exception(f"Failed to query {message}.")
+            logger.exception(f"Failed to query {message}.")
             response = "An error occurred. Please try again!"
         return response
 
@@ -51,7 +51,7 @@ class WhatsAppBot(BaseBot):
         app = self.flask.Flask(__name__)
 
         def signal_handler(sig, frame):
-            logging.info("\nGracefully shutting down the WhatsAppBot...")
+            logger.info("\nGracefully shutting down the WhatsAppBot...")
             sys.exit(0)
 
         signal.signal(signal.SIGINT, signal_handler)

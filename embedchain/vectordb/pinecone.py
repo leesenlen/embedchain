@@ -1,4 +1,4 @@
-import logging
+from embedchain.config.log_conf import logger
 import os
 from typing import Optional, Union
 
@@ -49,7 +49,7 @@ class PineconeDB(BaseVectorDB):
         # Setup BM25Encoder if sparse vectors are to be used
         self.bm25_encoder = None
         if self.config.hybrid_search:
-            logging.info("Initializing BM25Encoder for sparse vectors..")
+            logger.info("Initializing BM25Encoder for sparse vectors..")
             self.bm25_encoder = self.config.bm25_encoder if self.config.bm25_encoder else BM25Encoder.default()
 
         # Call parent init here because embedder is needed

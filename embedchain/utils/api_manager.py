@@ -1,6 +1,6 @@
 import time
 import requests
-import logging
+from embedchain.config.log_conf import logger
 from typing import Callable, Any
 
 def request_retry(retries: int, timeout: int):

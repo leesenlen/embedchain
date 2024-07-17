@@ -1,5 +1,5 @@
 import hashlib
-import logging
+from embedchain.config.log_conf import logger
 import os
 import ssl
 from typing import Any, Optional
@@ -38,7 +38,7 @@ class SlackLoader(BaseLoader):
                 "SLACK_USER_TOKEN environment variables not provided. Check `https://docs.embedchain.ai/data-sources/slack` to learn more."  # noqa:E501
             )
 
-        logging.info(f"Creating Slack Loader with config: {config}")
+        logger.info(f"Creating Slack Loader with config: {config}")
         # get slack client config params
         slack_bot_token = os.getenv("SLACK_USER_TOKEN")
         ssl_cert = ssl.create_default_context(cafile=certifi.where())
@@ -54,7 +54,7 @@ class SlackLoader(BaseLoader):
             headers=headers,
             team_id=team_id,
         )
-        logging.info("Slack Loader setup successful!")
+        logger.info("Slack Loader setup successful!")
 
     @staticmethod
     def _check_query(query):
@@ -69,7 +69,7 @@ class SlackLoader(BaseLoader):
             data = []
             data_content = []
 
-            logging.info(f"Searching slack conversations for query: {query}")
+            logger.info(f"Searching slack conversations for query: {query}")
             results = self.client.search_messages(
                 query=query,
                 sort="timestamp",
@@ -79,7 +79,7 @@ class SlackLoader(BaseLoader):
 
             messages = results.get("messages")
             num_message = len(messages)
-            logging.info(f"Found {num_message} messages for query: {query}")
+            logger.info(f"Found {num_message} messages for query: {query}")
 
             matches = messages.get("matches", [])
             for message in matches:
@@ -107,7 +107,7 @@ class SlackLoader(BaseLoader):
                 "data": data,
             }
         except Exception as e:
-            logging.warning(f"Error in loading slack data: {e}")
+            logger.warning(f"Error in loading slack data: {e}")
             raise ValueError(
                 f"Error in loading slack data: {e}. Check `https://docs.embedchain.ai/data-sources/slack` to learn more."  # noqa:E501
             ) from e

@@ -1,4 +1,4 @@
-import logging
+from embedchain.config.log_conf import logger
 import os
 
 import pytest
@@ -62,6 +62,6 @@ class TestAnonymousTelemetry:
         telemetry = AnonymousTelemetry()
         event_name = "test_event"
         properties = {"key": "value"}
-        with caplog.at_level(logging.ERROR):
+        with caplog.at_level(logger.ERROR):
             telemetry.capture(event_name, properties)
         assert "Failed to send telemetry event" in caplog.text

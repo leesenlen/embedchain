@@ -1,5 +1,5 @@
 import concurrent.futures
-import logging
+from embedchain.config.log_conf import logger
 import os
 from string import Template
 from typing import Optional
@@ -97,6 +97,6 @@ class Groundedness(BaseMetric):
                     score = future.result()
                     results.append(score)
                 except Exception as e:
-                    logging.error(f"Error while evaluating groundedness for data point {data}: {e}")
+                    logger.error(f"Error while evaluating groundedness for data point {data}: {e}")
 
         return np.mean(results) if results else 0.0
