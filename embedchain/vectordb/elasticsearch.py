@@ -746,14 +746,9 @@ class ElasticsearchDB(BaseVectorDB):
     def request_rerank_service(self, rerank_url, docs):
         logger.info(f"start to request rerank service: {rerank_url}")
         start = time.time()
-        try:
-            response = requests.post(rerank_url, json=docs)
-        except Exception as e:
-            logger.error(f"request rerank service failed: {e}")
-            response = False
-        finally:
-            logger.info(f"request rerank service cost: {time.time() - start :.4f} seconds")
-            return response
+        response = requests.post(rerank_url, json=docs)
+        logger.info(f"request rerank service cost: {time.time() - start :.4f} seconds")
+        return response
 
     def rerank(self, query, docs, discard_threshold=0.01, top_k=8, is_logical_knowledge=False) -> None:
         """
@@ -777,6 +772,7 @@ class ElasticsearchDB(BaseVectorDB):
         rerank_result = self.request_rerank_service(rerank_url, docs={"question": query, "docs": contents})
         if not rerank_result:
             logger.error("rerank服务请求失败，返回默认结果")
+            docs.rerank_scores = docs.scores
             return
         rerank_scores = rerank_result.json()["scores"]
         combined_list = [(rerank_score, _id, score) for rerank_score, _id, score in

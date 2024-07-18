@@ -16,10 +16,9 @@ def retry(retries: int, retry_delay: int):
     def decorator(func: Callable[[], Any]) -> Callable[[], Any]:
         def wrapper(*args, **kwargs) -> Any:
             for attempt in range(retries):
-                error = BaseException()
                 try:
                     response = func(*args, **kwargs)
-                    response.raise_for_status()  # Check HTTP response status code
+                    response.raise_for_status()
                     return response
                 except requests.exceptions.HTTPError as e:
                     logger.info(f"HTTP error occurred on attempt {attempt + 1}: {e}")
@@ -39,6 +38,7 @@ def retry(retries: int, retry_delay: int):
                 if attempt < retries - 1:
                     time.sleep(retry_delay)
                 else:
-                    raise error
+                    logger.error(f"Failed to execute function after {retries} attempts: {error}")
+                    return False
         return wrapper
     return decorator
