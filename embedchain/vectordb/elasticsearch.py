@@ -449,6 +449,7 @@ class ElasticsearchDB(BaseVectorDB):
             **kwargs,
     ) -> Union[list[tuple[str, dict]], list[str]]:
         # 起始时间
+        logger.info(f"using index: {self.config.collection_name}")
         start_time = datetime.now()
         # knn与关键字一起时加过滤条件需要都加上，只加在query里knn并不会生效
         input_query_vector = self.embedder.embedding_fn(input_query)
@@ -469,6 +470,7 @@ class ElasticsearchDB(BaseVectorDB):
             is_logical_knowledge = kwargs.get("is_logical_knowledge", False)
             self.rerank(input_query[0], result, discard_threshold=rerank_discard_threshold, top_k=top_k,
                         is_logical_knowledge=is_logical_knowledge)
+        log_context = ''
         for i, _id in enumerate(result.ids):
             context = result.field[_id]
             if 'tokens_num' in context['metadata']:
@@ -478,6 +480,7 @@ class ElasticsearchDB(BaseVectorDB):
             sum_tokens += tokens_num
             context["context"] = context["content_with_weight"] if context.get("content_with_weight") \
                 else context["text"]
+            log_context += f"||{context['text']}"
             context["id"] = _id  # es文档id
             context["tokens_num"] = tokens_num  # token计数
             context["score"] = result.scores[i]  # 文档得分
@@ -492,6 +495,8 @@ class ElasticsearchDB(BaseVectorDB):
             contexts.append(context)
             if sum_tokens > knowledge_tokens:
                 break
+        logger.info(f"最终召回文档num: {len(contexts)}")
+        logger.info(f"最终召回文档: {log_context}")
         return contexts
 
         # 旧版rag
@@ -766,7 +771,7 @@ class ElasticsearchDB(BaseVectorDB):
                 contents.append(docs.field[_id]["text"])
         if is_logical_knowledge:
             query = f"根据公司计算规则，`{query}`需要哪些背景知识及上下文信息?"
-            discard_threshold = discard_threshold * 0.01
+            discard_threshold = discard_threshold * 0.001
             logger.info(f"逻辑库请求，调整rerank参数. query:{query}, discard_threshold: {discard_threshold}")
         # rerank_scores = requests.post(rerank_url, json={"question": query, "docs": contents}).json()["scores"]
         rerank_result = self.request_rerank_service(rerank_url, docs={"question": query, "docs": contents})
