@@ -110,7 +110,7 @@ class PdfFileChunker(BaseChunker):
         调用sailvan_OCR进行行OCR解析，表格识别，布局识别。然后进行页面处理
         """
         timeout = len(self.pdf.pages) * 10
-        result = self.request_ocr_with_error_handling(src, "pdf", timeout=timeout, zoomin=self.zoomin)
+        result = self.request_ocr(src, "pdf", timeout=timeout, zoomin=self.zoomin).json()
         # OCR请求失败时，走默认的pdf解析，保证pdf正常解析
         if not result:
             return [], []

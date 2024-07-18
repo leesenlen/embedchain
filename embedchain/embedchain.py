@@ -173,6 +173,7 @@ class EmbedChain(JSONSerializable):
         data_formatter = DataFormatter(data_type, config, loader, chunker)
         metadata["data_type"] = data_type.value
         embeddings_data = data_formatter.chunker.chunks(data_formatter.loader, source, metadata, config=config.chunker)
+        logger.info(f"文档解析完成...")
         # spread chunking results
         documents = embeddings_data["documents"]
         metadatas = embeddings_data["metadatas"]

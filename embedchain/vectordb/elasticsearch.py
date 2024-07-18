@@ -2,6 +2,7 @@ from embedchain.config.log_conf import logger
 import requests
 import os
 import re
+import time
 from typing import Any, Optional, Union
 from embedchain.rag.nlp.search import ESQueryBuilder
 
@@ -14,6 +15,7 @@ except ImportError:
     ) from None
 
 from embedchain.config import ElasticsearchDBConfig
+from embedchain.utils.api_manager import retry
 from embedchain.helpers.json_serializable import register_deserializable
 from embedchain.utils.misc import chunks
 from embedchain.vectordb.base import BaseVectorDB
@@ -450,7 +452,7 @@ class ElasticsearchDB(BaseVectorDB):
         start_time = datetime.now()
         # knn与关键字一起时加过滤条件需要都加上，只加在query里knn并不会生效
         input_query_vector = self.embedder.embedding_fn(input_query)
-        logger.info(f"查询作向量化耗时：{(datetime.now() - start_time).total_seconds()}")
+        logger.info(f"查询向量化耗时：{(datetime.now() - start_time).total_seconds()}")
         # 如果使用了rerank模型，可以多召回文档，再通过rerank去除置信度低的
         if rerank:
             retrieve_num = top_k * 5
@@ -740,6 +742,19 @@ class ElasticsearchDB(BaseVectorDB):
         self.client.delete_by_query(index=self._get_index(), body=query)
         self.client.indices.refresh(index=self._get_index())
 
+    @retry(retries=3, retry_delay=1)
+    def request_rerank_service(self, rerank_url, docs):
+        logger.info(f"start to request rerank service: {rerank_url}")
+        start = time.time()
+        try:
+            response = requests.post(rerank_url, json=docs)
+        except Exception as e:
+            logger.error(f"request rerank service failed: {e}")
+            response = False
+        finally:
+            logger.info(f"request rerank service cost: {time.time() - start :.4f} seconds")
+            return response
+
     def rerank(self, query, docs, discard_threshold=0.01, top_k=8, is_logical_knowledge=False) -> None:
         """
         对搜索到的结果，进行rerank重排序，剔除置信度较低的结果
@@ -758,7 +773,12 @@ class ElasticsearchDB(BaseVectorDB):
             query = f"根据公司计算规则，`{query}`需要哪些背景知识及上下文信息?"
             discard_threshold = discard_threshold * 0.01
             logger.info(f"逻辑库请求，调整rerank参数. query:{query}, discard_threshold: {discard_threshold}")
-        rerank_scores = requests.post(rerank_url, json={"question": query, "docs": contents}).json()["scores"]
+        # rerank_scores = requests.post(rerank_url, json={"question": query, "docs": contents}).json()["scores"]
+        rerank_result = self.request_rerank_service(rerank_url, docs={"question": query, "docs": contents})
+        if not rerank_result:
+            logger.error("rerank服务请求失败，返回默认结果")
+            return
+        rerank_scores = rerank_result.json()["scores"]
         combined_list = [(rerank_score, _id, score) for rerank_score, _id, score in
                          zip(rerank_scores, docs.ids, docs.scores) if
                          rerank_score >= discard_threshold]

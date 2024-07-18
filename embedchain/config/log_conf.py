@@ -11,4 +11,5 @@ logger_name = 'embedchain'
 if logger_exists(logger_name):
     logger = logging.getLogger(logger_name)
 else:
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
     logger = logging

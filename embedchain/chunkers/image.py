@@ -93,7 +93,7 @@ class ImageChunker(BaseChunker):
         _, extension = os.path.splitext(src)
         extension = extension.lstrip('.').lower()
         timeout = 30
-        result = self.request_ocr_with_error_handling(src, extension, timeout=timeout)
+        result = self.request_ocr(src, extension, timeout=timeout).json()
         # OCR请求失败时，走默认的pdf解析，保证pdf正常解析
         if not result:
             return [], []
